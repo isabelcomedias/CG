@@ -29,6 +29,8 @@ let controls;
 // Liberty angles
 let theta1 = 0;
 let theta2 = 0;
+let theta3 = 0;
+let delta1 = 0;
 
 
 /////////////////////
@@ -458,9 +460,12 @@ function createHead() {
 
     head.add(headMesh);         // Add mesh to head
     pectorals.add(head);        // make it a child of pectorals
+    
+
 
     createEyes();
     createAntennas();
+    
 
     return head;
 }
@@ -623,6 +628,7 @@ function createArms() {
 
     createExhaustPipes(leftArm, rightArm);
     createForearms(leftArm, rightArm);
+    
 
     return { leftArm, rightArm };
 }
@@ -816,6 +822,14 @@ function update() {
         if (robot.waist) {
             robot.waist.rotation.y = theta2;
         }
+        if (robot.head) {
+            robot.head.rotation.x = theta3;
+        }
+        if (robot.arms.leftArm && robot.arms.rightArm) {
+            robot.arms.leftArm.position.x = -delta1;
+            robot.arms.rightArm.position.x = delta1;
+        }
+        
     }
 }
 
@@ -913,6 +927,23 @@ function onKeyDown(e) {
             break;
         case 's':
             theta2 = Math.min(theta2 - 0.05, Math.PI / 2);
+            break;
+        case 'R':
+        case 'r':
+            theta3 = Math.min(theta3 + 0.05, 0);
+            break;
+        case 'F':
+        case 'f':
+            theta3 = Math.max(theta3 - 0.05, -Math.PI / 2);
+            break;
+        
+        case 'E':
+        case 'e':
+            delta1 = Math.max(0, delta1 - 0.05); 
+            break;
+        case 'D':
+        case 'd':
+            delta1 = Math.min(0.5, delta1 + 0.05);
             break;
         break;
     }
