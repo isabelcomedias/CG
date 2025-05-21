@@ -93,25 +93,20 @@ function createLights() {
 ////////////////////////
 
 function createRobot() {
-  const robot = new THREE.Group(); // shared root
+    const robot = new THREE.Group(); // shared root
 
-  const feet = createFeet(robot);
-  const legs = createLegs(robot);
-  const thighs = createThighs(robot);
-  const lowerAbdomen = createLowerAbdomen(robot);
-  const waist = createWaist();
-  const pectorals = createPectorals();
+    robot.feet = createFeet(robot);
+    robot.legs = createLegs(robot);
+    robot.thighs = createThighs(robot);
+    robot.lowerAbdomen = createLowerAbdomen(robot);
 
-  const head = createHead();
-  const shoulders = createShoulders();
-  const arms = createArms();
+    robot.waist = createWaist();
+    robot.pectorals = createPectorals();
+    robot.head = createHead();
+    robot.shoulders = createShoulders();
+    robot.arms = createArms();
 
-  // Optionally store references if needed
-  robot.head = head;
-  robot.shoulders = shoulders;
-  robot.pectorals = pectorals;
-
-  return robot;
+    return robot;
 }
 
 function createTrailer() {
@@ -189,6 +184,9 @@ function createFeet(robot) {
     // Add pivot to robot
     robot.add(leftFootPivot);
     robot.add(rightFootPivot);
+
+    robot.leftFootPivot = leftFootPivot;
+    robot.rightFootPivot = rightFootPivot;
 
     return { leftFootPivot, rightFootPivot };
 
@@ -397,7 +395,7 @@ function createWaist(){
 
     waist.add(waistMesh);           // Add mesh to waist
     lowerAbdomen.add(waist);        // Add waist as child of lowerAbdomen   
-
+    
     return waist;
 
 }
@@ -807,16 +805,18 @@ function handleCollisions() {}
 /* UPDATE */
 ////////////
 function update() {
-    /*
-  if (leftFootPivot && rightFootPivot) {
-    // Aqui você rotaciona os pés ao redor do eixo desejado, ex: Z
-    leftFootPivot.rotation.x = theta1;
-    rightFootPivot.rotation.x = theta1;
-  }
-    if (lowerAbdomen) {
-    // Aqui você rotaciona os pés ao redor do eixo desejado, ex: Z
-    lowerAbdomen.rotation.x = theta2;
-  } */
+   const robot = scene.children.find(obj => obj instanceof THREE.Group); // Or store `robot` globally instead
+    if (robot) {
+        if (robot.leftFootPivot) {
+            robot.leftFootPivot.rotation.x = theta1;
+        }
+        if (robot.rightFootPivot) {
+            robot.rightFootPivot.rotation.x = theta1;
+        }
+        if (robot.waist) {
+            robot.waist.rotation.y = theta2;
+        }
+    }
 }
 
 /////////////
@@ -901,19 +901,20 @@ function onKeyDown(e) {
             activeCamera = cameras.perspective;
             controls.enabled = true;
             break;
-        /*
+        
         case 'q':
-            theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
+            theta1 = Math.min(theta1 + 0.05, 0);
             break;
         case 'a':
-            theta1 = Math.max(theta1 - 0.05, -Math.PI / 2);
+            theta1 = Math.max(theta1 - 0.05, -Math.PI/2);
             break;
         case 'w':
-            theta2 = Math.min(theta1 + 0.05, Math.PI / 2);
+            theta2 = Math.max(theta2 + 0.05, -Math.PI / 2);
             break;
         case 's':
-            theta2 = Math.max(theta1 + 0.05, Math.PI / 2);
-        break;*/
+            theta2 = Math.min(theta2 - 0.05, Math.PI / 2);
+            break;
+        break;
     }
 }
 
