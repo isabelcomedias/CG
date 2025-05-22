@@ -15,8 +15,7 @@ let activeCamera;
 let renderer;
 let controls;
 let trailerRef;
-let isWireframe = false; 
-
+let isWireframe = false;
 
 // Liberty angles
 let theta1 = 0;
@@ -103,7 +102,7 @@ function createRobot() {
 function createTrailer() {
     let trailer = new THREE.Group(); // shared root
 
-    trailer.position.set(0, 0.5, 10);
+    trailer.position.set(0, 0.5, -15);
 
     const { trailerLeftLeg, trailerRightLeg } = createTrailerBody(trailer);
     trailerLeftLeg.rotation.x = Math.PI / 2;
@@ -138,6 +137,9 @@ function createFeet(robot) {
     const footDepth = 1;
     const footHeight = 0.5;
 
+    // Leg variables
+    const legDepth = 1;
+
     // Distance variables
     const distanceFeetCenter = 0.3; // Distance from leg center to inner foot face (feet position
                                     // is relative to leg)  
@@ -148,23 +150,23 @@ function createFeet(robot) {
     // LEFT FOOT
     const leftFootPivot = new THREE.Object3D();
 
-    leftFootPivot.position.set(distanceFeetCenter - footLenght/2, footHeight/2, footHeight); // rotation point (center and back face aligned)
+    leftFootPivot.position.set(distanceFeetCenter - footLenght/2, 0, legDepth/2); // rotation point (center and back face aligned)
 
     // Create feet meshes
     const leftFootMesh = new THREE.Mesh(footGeometry, footMaterial);
 
     // Center the foot mesh relative to the pivot point
-    leftFootMesh.position.set(0, 0, footHeight); 
+    leftFootMesh.position.set(0, -footHeight/2, footDepth/2); 
 
 
     // RIGHT FOOT
     const rightFootPivot = new THREE.Object3D();
-    rightFootPivot.position.set(-distanceFeetCenter + footLenght/2, footHeight/2, footHeight); // rotation point (center and back face aligned)
+    rightFootPivot.position.set(-distanceFeetCenter + footLenght/2, 0, legDepth/2); // rotation point (center and back face aligned)
 
     // Create feet meshes
     const rightFootMesh = new THREE.Mesh(footGeometry, footMaterial);
     // Center the foot mesh relative to the pivot point
-    rightFootMesh.position.set(0, 0, footHeight);
+    rightFootMesh.position.set(0, -footHeight/2, footDepth/2);
 
     // Add mesh to pivot
     leftFootPivot.add(leftFootMesh);
@@ -185,12 +187,13 @@ function createLegs(robot){
     const legLenght = 0.6;
 
     // Tire variables
-    const tireRadius = 0.5;
+    const tireRadius = 0.7;
     const tireHeight = 0.6;
 
     // Distance variables
     const distanceFeetCenterLeg = 1.1; // distance from center to leg center
     const distanceMidTire = 2.5 // distance from ground to center of mid tire
+    const distanceGroundCenterBottomTire = tireRadius + 0.2;
     
 
     const legGeometry = new THREE.BoxGeometry(legLenght, legHeight, legDepth);
@@ -213,7 +216,7 @@ function createLegs(robot){
     // LEFT TIRES
     const leftTireBottom = new THREE.Mesh(tireGeometry, tireMaterial);
     leftTireBottom.rotation.z = Math.PI / 2;             // Rotate cylinder to lay flat on side
-    leftTireBottom.position.set(-tireHeight/2 - legLenght/2, tireRadius, 0); 
+    leftTireBottom.position.set(-tireHeight/2 - legLenght/2, distanceGroundCenterBottomTire, 0); 
 
     leftLeg.add(leftTireBottom);
 
@@ -239,7 +242,7 @@ function createLegs(robot){
     // RIGHT TIRES
     const rightTireBottom = new THREE.Mesh(tireGeometry, tireMaterial);
     rightTireBottom.rotation.z = Math.PI / 2;               // Rotate cylinder to lay flat on side
-    rightTireBottom.position.set(tireHeight/2 + legLenght/2, tireRadius, 0);
+    rightTireBottom.position.set(tireHeight/2 + legLenght/2, distanceGroundCenterBottomTire, 0);
 
     rightLeg.add(rightTireBottom);
 
@@ -256,11 +259,12 @@ function createThighs(robot){
 
     // Thigh variables
     const thighHeight = 1; // height of the thigh
-    const thighDepth = 1; // depth of the thigh
+    const thighDepth = 0.2; // depth of the thigh
     const thighLenght = 0.6; // width of the thigh
 
     // Leg variable
     const heightLeg = 4.5;
+    const depthLeg = 0.6;
 
     // Distance variables
     const distanceFeetCenterThigh = 1.1; // distance from center to thigh center (= leg center)
@@ -277,7 +281,7 @@ function createThighs(robot){
     const leftThigh = new THREE.Object3D();
     leftThigh.position.set(-distanceFeetCenterThigh, heightLeg, 0); // Place thigh at top of leg (the referece point is the robot center)
 
-    leftThighMesh.position.set(0, thighHeight/2, 0); // move mesh up to height of thigh center
+    leftThighMesh.position.set(0, thighHeight/2, depthLeg/2 - thighDepth/2); // move mesh up to height of thigh center
     leftThigh.add(leftThighMesh);
 
     // Attach leg under thigh
@@ -288,7 +292,7 @@ function createThighs(robot){
 
     // RIGHT THIGH
     const rightThigh = new THREE.Object3D();
-    rightThigh.position.set(distanceFeetCenterThigh, heightLeg, 0);
+    rightThigh.position.set(distanceFeetCenterThigh, heightLeg, depthLeg/2 - thighDepth/2);
 
     rightThighMesh.position.set(0, thighHeight/2, 0);   
     rightThigh.add(rightThighMesh);
@@ -309,21 +313,21 @@ function createLowerAbdomen(robot) {
     const lowerAbdomenLenght = 2.8; // width of the thigh
 
     // Tire variables
-    const tireRadius = 0.5; // radius of the tire
+    const tireRadius = 0.7; // radius of the tire
     const tireHeight = 0.6; // height of the tire
 
 
     // distance variables
     const distanceGroundAbdomen = 5.5; // distance from ground to lower abdomen base (leg height + thigh height)
-    const newDepth = 0.5; // the axis was in the middle of the leg, now its in its back face
-
+    const newDepth = 0.1; // the axis was in the middle of the leg, now its in its back face
+    const distanceAbdomenBaseCenterTire = 0.3;
 
     const lowerAbdomenGeometry = new THREE.BoxGeometry(lowerAbdomenLenght, lowerAbdomenHeight, lowerAbdomenDepth);
     const lowerAbdomenMaterial = new THREE.MeshStandardMaterial({ color: 0xA87E57 });
     
     // LOWER ABDOMEN
     const lowerAbdomen = new THREE.Object3D();
-    lowerAbdomen.position.set(0, distanceGroundAbdomen, -newDepth);
+    lowerAbdomen.position.set(0, distanceGroundAbdomen, newDepth);
 
     // Create lower abdomen mesh
     const lowerAbdomenMesh = new THREE.Mesh(lowerAbdomenGeometry, lowerAbdomenMaterial);
@@ -339,14 +343,14 @@ function createLowerAbdomen(robot) {
     // LEFT TIRE
     const leftTire = new THREE.Mesh(tireGeometry, tireMaterial);
     leftTire.rotation.z = Math.PI / 2; // Rotate cylinder to lay flat on side
-    leftTire.position.set(-lowerAbdomenLenght/2 - tireHeight/2, lowerAbdomenHeight/2, tireRadius);     // Place at the center of the left tire
+    leftTire.position.set(-lowerAbdomenLenght/2 - tireHeight/2, distanceAbdomenBaseCenterTire, tireRadius);     // Place at the center of the left tire
 
     lowerAbdomen.add(leftTire);
 
     // RIGHT TIRE
     const rightTire = new THREE.Mesh(tireGeometry, tireMaterial);
     rightTire.rotation.z = Math.PI / 2;
-    rightTire.position.set(lowerAbdomenLenght/2 + tireHeight/2, lowerAbdomenHeight/2, tireRadius); // Place at the center of the right tire
+    rightTire.position.set(lowerAbdomenLenght/2 + tireHeight/2, distanceAbdomenBaseCenterTire, tireRadius); // Place at the center of the right tire
     
     lowerAbdomen.add(rightTire);
 
@@ -421,9 +425,9 @@ function createHead(robot) {
     // Pectorals variables
     const pectoralsHeight = 1.5; // height of the pectorals
     
-    const yOffset = pectoralsHeight/2 + headHeight/2; // center should be at y center of head
-    const zOffset = -headDepth/2;     //"The center should be aligned with the Z center of the head 
-                                    //(the Z position of the pectorals was aligned with the front face of the head)."
+    const yOffset = pectoralsHeight/2; // pivot at the base of the head
+    const zOffset = headDepth;     //The pivot should be aligned with the back of the head 
+                                    //(the Z position of the pectorals was aligned with the front face of the head).
 
 
     // Create head geometry and mesh
@@ -432,11 +436,11 @@ function createHead(robot) {
 
     // HEAD
     const head = new THREE.Object3D();
-    head.position.set(0, yOffset, zOffset);
+    head.position.set(0, yOffset, -zOffset);
 
     // Create head mesh
     const headMesh = new THREE.Mesh(headGeometry, headMaterial);
-    headMesh.position.set(0, 0, 0); // Centered on head pivot
+    headMesh.position.set(0, headHeight/2, headDepth/2); // Centered on head pivot
 
     head.add(headMesh);         // Add mesh to head
     robot.pectorals.add(head);        // make it a child of pectorals
@@ -452,10 +456,15 @@ function createEyes(head) {
     // Eye variables
     const eyeRadius = 0.15;
 
+    
+    // Head variables
+    const headHeight = 1;
+    const headDepth = 1;
+
     // distance variables
     const distanceEyesCenter = 0.3; // distance from head center to eye center   
-    const distanceEyesHeight = 0.25; // distance from center of head to eye center
-    const distanceEyesDepth = 0.5; // distance center of head to eye center z
+    const distanceEyesHeight = headHeight/2 + 0.25; // distance from center of head to eye center
+    const distanceEyesDepth = headDepth; // distance center of head to eye center z
 
 
     // create eye geometry and mesh
@@ -485,9 +494,10 @@ function createAntennas(head) {
     // Head variables
     const headHeight = 1;
     const headLenght = 1;
+    const headDepth = 1;
 
     //distance variables
-    const distanceAntennaHeight = antennaHeight/2 + headHeight/2; // distance from center of head to antenna center
+    const distanceAntennaHeight = antennaHeight/2 + headHeight; // distance from center of head to antenna center
     const distanceAntennaHeadX = headLenght/2 - antennaLenght/2; // distance from center of head to antenna center in the X axis
 
 
@@ -497,13 +507,13 @@ function createAntennas(head) {
 
     // LEFT ANTENNA
     const leftAntennaMesh = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    leftAntennaMesh.position.set(-distanceAntennaHeadX, distanceAntennaHeight, 0);  // lateral extreme X (half head width), half antenna height up
+    leftAntennaMesh.position.set(-distanceAntennaHeadX, distanceAntennaHeight, headDepth/2);  // lateral extreme X (half head width), half antenna height up
     
     head.add(leftAntennaMesh);
 
     // RIGHT ANTENNA
     const rightAntennaMesh = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    rightAntennaMesh.position.set(distanceAntennaHeadX, distanceAntennaHeight, 0);
+    rightAntennaMesh.position.set(distanceAntennaHeadX, distanceAntennaHeight, headDepth/2);
     
     head.add(rightAntennaMesh);
 }
@@ -512,7 +522,7 @@ function createShoulders(robot) {
 
     // Shoulder variables
     const shoulderHeight = 0.3;
-    const shoulderLength = 0.9;
+    const shoulderLength = 0.7;
     const shoulderDepth = 0.3;
 
     // Pectorals variables
@@ -560,13 +570,13 @@ function createShoulders(robot) {
 function createArms(robot) {
 
     // Arm variables
-    const armLength = 0.6;
-    const armHeight = 1.5;
+    const armLength = 0.7;
+    const armHeight = 1.2;
     const armDepth = 0.7;
 
     // Shoulder variables
     const shoulderHeight = 0.3;
-    const shoulderLength = 0.9;
+    const shoulderLength = 0.7;
     const shoulderDepth = 0.3;
 
     // Distance variables
@@ -614,7 +624,7 @@ function createExhaustPipes(leftArm, rightArm) {
     const pipeHeight = 1;
 
     // Arm variables
-    const armLength = 0.6;
+    const armLength = 0.7;
 
     // Distance variables
     const pipeYOffset = -0.5; // 0.5 below top of arm
@@ -643,11 +653,11 @@ function createForearms(leftArm, rightArm) {
 
     // Forearm variables
     const forearmLength = 0.6;
-    const forearmHeight = 2.5;
+    const forearmHeight = 2;
     const forearmDepth = 0.7;
 
     // Arm variables
-    const armHeight = 1.5;
+    const armHeight = 1.2;
 
 
     // Create forearm geometry and mesh
@@ -666,7 +676,7 @@ function createForearms(leftArm, rightArm) {
 
     // RIGHT FOREARM
     const rightForearm = new THREE.Object3D();
-    rightForearm.position.set(0, -1.5, 0);
+    rightForearm.position.set(0, -armHeight, 0);
 
     const rightForearmMesh = new THREE.Mesh(forearmGeometry, forearmMaterial);
     rightForearmMesh.position.set(0, -forearmHeight / 2, 0);
@@ -680,12 +690,12 @@ function createForearms(leftArm, rightArm) {
 function createTrailerBody(trailer){
 
     // Leg variables
-    const trailerHeight = 6;
-    const trailerDepth = 1;
-    const trailerLenght = 0.6;
+    const trailerLenght = 6;
+    const trailerDepth = 0.6;
+    const trailerHeight = 1;
 
     // Tire variables
-    const tireRadius = 0.5;
+    const tireRadius = 0.7;
     const tireHeight = 0.6;
 
     // Distance variables
@@ -693,7 +703,7 @@ function createTrailerBody(trailer){
     const distanceMidTire = 2.5 // distance from ground to center of mid tire
     
 
-    const legGeometry = new THREE.BoxGeometry(trailerLenght, trailerHeight, trailerDepth);
+    const legGeometry = new THREE.BoxGeometry(trailerHeight, trailerLenght, trailerDepth);
     const legMaterial = new THREE.MeshStandardMaterial({ color: 0xD2B48C  });
 
     const tireGeometry = new THREE.CylinderGeometry(tireRadius, tireRadius, tireHeight, 32);
@@ -705,18 +715,18 @@ function createTrailerBody(trailer){
     trailer.add(trailerLeftLeg);
 
     const leftLegMesh = new THREE.Mesh(legGeometry, legMaterial);
-    leftLegMesh.position.set(0, trailerHeight/2, 0);
+    leftLegMesh.position.set(0, trailerLenght/2, 0);
     trailerLeftLeg.add(leftLegMesh);
 
     // LEFT TIRES
     const leftTireBottom = new THREE.Mesh(tireGeometry, tireMaterial);
-    leftTireBottom.rotation.z = Math.PI / 2;             // Rotate cylinder to lay flat on side
-    leftTireBottom.position.set(-tireHeight/2 - trailerLenght/2, tireRadius, 0); 
+    leftTireBottom.rotation.x = Math.PI / 2;             // Rotate cylinder to lay flat on side
+    leftTireBottom.position.set(0, tireRadius, -trailerDepth); 
     trailerLeftLeg.add(leftTireBottom);
 
     const leftTireMid = new THREE.Mesh(tireGeometry, tireMaterial);
-    leftTireMid.rotation.z = Math.PI / 2;                // Rotate cylinder to lay flat on side
-    leftTireMid.position.set(-tireHeight/2 - trailerLenght/2, distanceMidTire, 0); 
+    leftTireMid.rotation.x = Math.PI / 2;                // Rotate cylinder to lay flat on side
+    leftTireMid.position.set(0, distanceMidTire, -trailerDepth); 
     trailerLeftLeg.add(leftTireMid);
 
     // RIGHT LEG
@@ -726,20 +736,20 @@ function createTrailerBody(trailer){
 
     // Create right leg mesh
     const rightLegMesh = new THREE.Mesh(legGeometry, legMaterial);
-    rightLegMesh.position.set(0, trailerHeight/2, 0);
+    rightLegMesh.position.set(0, trailerLenght/2, 0);
     trailerRightLeg.add(rightLegMesh);
 
 
     // RIGHT TIRES
     const rightTireBottom = new THREE.Mesh(tireGeometry, tireMaterial);
-    rightTireBottom.rotation.z = Math.PI / 2;               // Rotate cylinder to lay flat on side
-    rightTireBottom.position.set(tireHeight/2 + trailerLenght/2, tireRadius, 0);
+    rightTireBottom.rotation.x = Math.PI / 2;               // Rotate cylinder to lay flat on side
+    rightTireBottom.position.set(0, tireRadius, -trailerDepth);
 
     trailerRightLeg.add(rightTireBottom);
 
     const rightTireMid = new THREE.Mesh(tireGeometry, tireMaterial);
-    rightTireMid.rotation.z = Math.PI / 2;                  // Rotate cylinder to lay flat on side
-    rightTireMid.position.set(tireHeight/2 + trailerLenght/2, distanceMidTire, 0);
+    rightTireMid.rotation.x = Math.PI / 2;                  // Rotate cylinder to lay flat on side
+    rightTireMid.position.set(0, distanceMidTire, -trailerDepth);
 
     trailerRightLeg.add(rightTireMid);
 
@@ -753,6 +763,9 @@ function createContainer(trailer) {
     const containerDepth = 9;
     const containerLength = 2.8;
 
+    // Trailer variables
+    const trailerLenght = 1;
+
 
     // Create container geometry and mesh
     const containerGeometry = new THREE.BoxGeometry(containerLength, containerHeight, containerDepth);
@@ -760,7 +773,7 @@ function createContainer(trailer) {
 
     // CONTAINER
     const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
-    containerMesh.position.set(0, containerHeight / 2, containerDepth / 2); // Center the container mesh
+    containerMesh.position.set(0, containerHeight / 2 + trailerLenght/2, containerDepth / 2); // Center the container mesh
 
     trailer.add(containerMesh);
 }
@@ -787,8 +800,8 @@ function update() {
             robot.feet.leftFootPivot.rotation.x = theta1;
             robot.feet.rightFootPivot.rotation.x = theta1;
         }
-        if (robot.waist) {
-            robot.waist.rotation.y = theta2;
+        if (robot.lowerAbdomen) {
+            robot.lowerAbdomen.rotation.x = theta2;
         }
         if (robot.head) {
             robot.head.rotation.x = theta3;
@@ -825,8 +838,7 @@ function init() {
     createCameras();
     scene.add(createRobot());
     trailerRef = createTrailer(); 
-    scene.add(trailerRef);  
-    //scene.add(createTruck());
+    scene.add(trailerRef)
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -893,51 +905,6 @@ function onKeyDown(e) {
             activeCamera = cameras.perspective;
             controls.enabled = true;
             break;
-        case 'Q':
-        case 'q':
-            theta1 = Math.min(theta1 + 0.05, 0);
-            break;
-        case 'A':
-        case 'a':
-            theta1 = Math.max(theta1 - 0.05, -Math.PI/2);
-            break;
-        case 'W':
-        case 'w':
-            theta2 = Math.max(theta2 - 0.05, -Math.PI / 2);
-            break;
-        case 'S':
-        case 's':
-            theta2 = Math.min(theta2 + 0.05, Math.PI / 2);
-            break;
-        case 'R':
-        case 'r':
-            theta3 = Math.min(theta3 + 0.05, 0);
-            break;
-        case 'F':
-        case 'f':
-            theta3 = Math.max(theta3 - 0.05, -Math.PI / 2);
-            break;
-        
-        case 'E':
-        case 'e':
-            delta1 = Math.max(0, delta1 - 0.05); 
-            break;
-        case 'D':
-        case 'd':
-            delta1 = Math.min(0.5, delta1 + 0.05);
-            break;
-        case 'ArrowUp':
-            deltaY += 1;
-            break;
-        case 'ArrowDown':
-            deltaY -= 1;
-            break;
-        case 'ArrowLeft':
-            deltaX -= 1;
-            break;
-        case 'ArrowRight':
-            deltaX += 1;
-            break;
         case '7':
             isWireframe = !isWireframe;
             scene.traverse((obj) => {
@@ -950,7 +917,51 @@ function onKeyDown(e) {
                 }
             });
             break;
-           
+        case 'Q':
+        case 'q':
+            theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
+            break;
+        case 'A':
+        case 'a':
+            theta1 = Math.max(theta1 - 0.05, 0);
+            break;
+        case 'W':
+        case 'w':
+            theta2 = Math.min(theta2 + 0.05, 0);
+            break;
+        case 'S':
+        case 's':
+            theta2 = Math.max(theta2 - 0.05, -Math.PI / 2);
+            break;
+        case 'R':
+        case 'r':
+            theta3 = Math.min(theta3 + 0.05, 0);
+            break;
+        case 'F':
+        case 'f':
+            theta3 = Math.max(theta3 - 0.05, -Math.PI);
+            break;
+        
+        case 'E':
+        case 'e':
+            delta1 = Math.max(0, delta1 - 0.05); 
+            break;
+        case 'D':
+        case 'd':
+            delta1 = Math.min(0.5, delta1 + 0.05);
+            break;
+                case 'ArrowUp':
+            deltaY += 1;
+            break;
+        case 'ArrowDown':
+            deltaY -= 1;
+            break;
+        case 'ArrowLeft':
+            deltaX -= 1;
+            break;
+        case 'ArrowRight':
+            deltaX += 1;
+            break;
     }
 }
 
