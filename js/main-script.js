@@ -16,14 +16,27 @@ let renderer;
 let controls;
 let trailerRef;
 let isWireframe = false;
+let toggleWireframe = false;
 
 // Liberty angles
+let rotateTheta1Up = false;
+let rotateTheta1Down = false;
+
+let rotateTheta2Up = false;
+let rotateTheta2Down = false;
+
+let rotateTheta3Up = false;
+let rotateTheta3Down = false;
+
+let moveArmsIn = false;
+let moveArmsOut = false;
+
+let moveX = 0;
+let moveY = 0;
 let theta1 = 0;
 let theta2 = 0;
 let theta3 = 0;
 let delta1 = 0;
-let deltaX = 0;
-let deltaY = 0;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -85,7 +98,7 @@ function createLights() {
 function createRobot() {
     const robot = new THREE.Group(); // shared root
 
-    robot.feet = createFeet(robot);
+    robot.feet = createFeet();
     robot.legs = createLegs(robot);
     robot.thighs = createThighs(robot);
     robot.lowerAbdomen = createLowerAbdomen(robot);
@@ -113,7 +126,7 @@ function createTrailer() {
     return trailer;
 }
 
-function createFeet(robot) {
+function createFeet() {
 
     // Foot variables
     const footLenght = 1.2;
@@ -768,32 +781,58 @@ function handleCollisions() {}
 /* UPDATE */
 ////////////
 function update() {
-   const robot = scene.children.find(obj => obj instanceof THREE.Group); // Or store `robot` globally instead
+   const robot = scene.children.find(obj => obj instanceof THREE.Group);
     if (robot) {
+        if (rotateTheta1Up) theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
+        if (rotateTheta1Down) theta1 = Math.max(theta1 - 0.05, 0);
         if (robot.feet) {
             robot.feet.leftFootPivot.rotation.x = theta1;
             robot.feet.rightFootPivot.rotation.x = theta1;
         }
+
+            // Thigh Rotation (theta2)
+        if (rotateTheta2Up) theta2 = Math.max(theta2 - 0.05, 0);
+        if (rotateTheta2Down) theta2 = Math.min(theta2 + 0.05, Math.PI / 2);
         if (robot.thighs) {
             robot.thighs.leftThigh.rotation.x = theta2;
             robot.thighs.rightThigh.rotation.x = theta2;
         }
+
+            // Head Rotation (theta3)
+        if (rotateTheta3Up) theta3 = Math.min(theta3 + 0.05, 0);
+        if (rotateTheta3Down) theta3 = Math.max(theta3 - 0.05, -Math.PI);
         if (robot.head) {
             robot.head.rotation.x = theta3;
         }
+
+            // Arm movement (delta1)
+        if (moveArmsIn) delta1 = Math.max(0, delta1 - 0.05);
+        if (moveArmsOut) delta1 = Math.min(0.5, delta1 + 0.05);
         if (robot.arms) {
             robot.arms.leftArm.position.x = -delta1;
             robot.arms.rightArm.position.x = delta1;
         }
-        if (trailerRef) {
-            const trailerDirection = new THREE.Vector3(deltaY , 0, -deltaX);
 
+        // Trailer movement (modeY, moveX)
+        if (trailerRef) {
+            const trailerDirection = new THREE.Vector3(moveY, 0, -moveX);
             if (trailerDirection.lengthSq() > 0) {
                 trailerDirection.normalize();
                 trailerRef.position.addScaledVector(trailerDirection, 0.05);
             }
-            deltaX = 0;
-            deltaY = 0;
+        }
+        if (toggleWireframe) {
+            isWireframe = !isWireframe;
+            scene.traverse(obj => {
+                if (obj.isMesh && obj.material) {
+                    if (Array.isArray(obj.material)) {
+                        obj.material.forEach(mat => mat.wireframe = isWireframe);
+                    } else {
+                        obj.material.wireframe = isWireframe;
+                    }
+                }
+            });
+            toggleWireframe = false;
         }
     }
 }
@@ -821,6 +860,7 @@ function init() {
 
     window.addEventListener('resize', onResize);
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
     controls = new OrbitControls(cameras.perspective, renderer.domElement);
     controls.enabled = false;
@@ -880,62 +920,64 @@ function onKeyDown(e) {
             activeCamera = cameras.perspective;
             controls.enabled = true;
             break;
+
+        // Change to wireframe model    
         case '7':
-            isWireframe = !isWireframe;
-            scene.traverse((obj) => {
-                if (obj.isMesh && obj.material) {
-                    if (Array.isArray(obj.material)) {
-                        obj.material.forEach(mat => mat.wireframe = isWireframe);
-                    } else {
-                        obj.material.wireframe = isWireframe;
-                    }
-                }
-            });
+           toggleWireframe = true;
             break;
+
+        // Feet Rotation
         case 'Q':
         case 'q':
-            theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
+            rotateTheta1Up = true;
             break;
         case 'A':
         case 'a':
-            theta1 = Math.max(theta1 - 0.05, 0);
+            rotateTheta1Down = true;
             break;
+
+        // Thigh Rotation 
         case 'W':
         case 'w':
-            theta2 = Math.max(theta2 - 0.05, 0);
+            rotateTheta2Up = true;
             break;
         case 'S':
         case 's':
-            theta2 = Math.min(theta2 + 0.05, Math.PI / 2);
+            rotateTheta2Down = true;
             break;
+
+        // Head Rotation 
         case 'R':
         case 'r':
-            theta3 = Math.min(theta3 + 0.05, 0);
+            rotateTheta3Up = true;
             break;
         case 'F':
         case 'f':
-            theta3 = Math.max(theta3 - 0.05, -Math.PI);
+            rotateTheta3Down = true;
             break;
-        
+
+        // Arms Movement
         case 'E':
         case 'e':
-            delta1 = Math.max(0, delta1 - 0.05); 
+            moveArmsIn = true;
             break;
         case 'D':
         case 'd':
-            delta1 = Math.min(0.5, delta1 + 0.05);
+            moveArmsOut = true;
             break;
-                case 'ArrowUp':
-            deltaY += 1;
+
+        // Trailer Movement
+        case 'ArrowUp':
+            moveY = 1;
             break;
         case 'ArrowDown':
-            deltaY -= 1;
+            moveY = -1;
             break;
         case 'ArrowLeft':
-            deltaX -= 1;
+            moveX = -1;
             break;
         case 'ArrowRight':
-            deltaX += 1;
+            moveX = 1;
             break;
     }
 }
@@ -943,7 +985,57 @@ function onKeyDown(e) {
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
-function onKeyUp(e) {}
+function onKeyUp(e) {
+    switch (e.key) {
+        case '7':
+            toggleWireframe = false;
+            break;
+        case 'Q':
+        case 'q':
+            rotateTheta1Up = false;
+            break;
+        case 'A':
+        case 'a':
+            rotateTheta1Down = false;
+            break;
+
+        case 'W':
+        case 'w':
+            rotateTheta2Up = false;
+            break;
+        case 'S':
+        case 's':
+            rotateTheta2Down = false;
+            break;
+
+        case 'R':
+        case 'r':
+            rotateTheta3Up = false;
+            break;
+        case 'F':
+        case 'f':
+            rotateTheta3Down = false;
+            break;
+
+        case 'E':
+        case 'e':
+            moveArmsIn = false;
+            break;
+        case 'D':
+        case 'd':
+            moveArmsOut = false;
+            break;
+
+        case 'ArrowUp':
+        case 'ArrowDown':
+            moveY = 0;
+            break;
+        case 'ArrowLeft':
+        case 'ArrowRight':
+            moveX = 0;
+            break;
+    }
+}
 
 
 init();
