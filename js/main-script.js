@@ -15,6 +15,7 @@ let activeCamera;
 let renderer;
 let controls;
 let trailerRef;
+let isWireframe = false; 
 
 
 // Liberty angles
@@ -937,6 +938,19 @@ function onKeyDown(e) {
         case 'ArrowRight':
             deltaX += 1;
             break;
+        case '7':
+            isWireframe = !isWireframe;
+            scene.traverse((obj) => {
+                if (obj.isMesh && obj.material) {
+                    if (Array.isArray(obj.material)) {
+                        obj.material.forEach(mat => mat.wireframe = isWireframe);
+                    } else {
+                        obj.material.wireframe = isWireframe;
+                    }
+                }
+            });
+            break;
+           
     }
 }
 
