@@ -14,9 +14,13 @@ let cameras = {};
 let activeCamera;
 let renderer;
 let controls;
-let trailerRef;
+let trailer;
+let robot;
 let isWireframe = false;
 let toggleWireframe = false;
+let isTrailerAttached = false;
+let isConnecting = false;
+// let helper1, helper2; Uncomment to check AABB's
 
 // Liberty angles
 let rotateTheta1Up = false;
@@ -769,20 +773,87 @@ function createContainer(trailer) {
 //////////////////////
 /* CHECK COLLISIONS */
 //////////////////////
-function checkCollisions() {}
+function checkCollisions() {
+    const robotBox = getAABB(robot);
+    const trailerBox = getAABB(trailer);
+
+    // helper1.box.copy(robotBox); Uncomment to check AABB's
+    // helper2.box.copy(trailerBox); Uncomment to check AABB's
+    return robotBox.intersectsBox(trailerBox);
+}
 
 ///////////////////////
 /* HANDLE COLLISIONS */
 ///////////////////////
-function handleCollisions() {}
+function handleCollisions() {
+    const targetPosition = new THREE.Vector3(0, 5.5, -11.7); // Connection point
 
+    // Smoothly move trailer toward target
+    trailer.position.lerp(targetPosition, 0.05);
+
+
+    // Animate the robot to connect
+    // feet
+    robot.feet.leftFootPivot.rotation.x = THREE.MathUtils.lerp(robot.feet.leftFootPivot.rotation.x, Math.PI / 2, 0.05);
+    robot.feet.rightFootPivot.rotation.x = THREE.MathUtils.lerp(robot.feet.rightFootPivot.rotation.x, Math.PI / 2, 0.05);
+    // thighs
+    robot.thighs.leftThigh.rotation.x = THREE.MathUtils.lerp(robot.thighs.leftThigh.rotation.x, Math.PI / 2, 0.05);
+    robot.thighs.rightThigh.rotation.x = THREE.MathUtils.lerp(robot.thighs.rightThigh.rotation.x, Math.PI / 2, 0.05);
+    // head
+    robot.head.rotation.x = THREE.MathUtils.lerp(robot.head.rotation.x, -Math.PI, 0.05);
+    // arms
+    robot.arms.leftArm.position.x = THREE.MathUtils.lerp(robot.arms.leftArm.position.x, 0, 0.05);
+    robot.arms.rightArm.position.x = THREE.MathUtils.lerp(robot.arms.rightArm.position.x, 0, 0.05);
+    
+    // Final snap and flag when all close enough
+    if ( // Verify distances to the target positions
+        trailer.position.distanceTo(targetPosition) < 0.05 &&
+        Math.abs(robot.feet.leftFootPivot.rotation.x - Math.PI / 2) < 0.01 &&
+        Math.abs(robot.feet.rightFootPivot.rotation.x - Math.PI / 2) < 0.01 &&
+        Math.abs(robot.thighs.leftThigh.rotation.x - Math.PI / 2) < 0.01 &&
+        Math.abs(robot.thighs.rightThigh.rotation.x - Math.PI / 2) < 0.01 &&
+        Math.abs(robot.head.rotation.x - -Math.PI) < 0.01 &&
+        Math.abs(robot.arms.leftArm.position.x - 0) < 0.01 &&
+        Math.abs(robot.arms.rightArm.position.x - 0) < 0.01
+    ) {
+        trailer.position.copy(targetPosition);
+        robot.feet.leftFootPivot.rotation.x = Math.PI / 2;
+        robot.feet.rightFootPivot.rotation.x = Math.PI / 2;
+        robot.thighs.leftThigh.rotation.x = Math.PI / 2;
+        robot.thighs.rightThigh.rotation.x = Math.PI / 2;
+        robot.head.rotation.x = -Math.PI;
+        robot.arms.leftArm.position.x = 0;
+        robot.arms.rightArm.position.x = 0;
+
+        isTrailerAttached = true;
+        isConnecting = false;
+    }
+}
+
+///////////////////////
+/*  COMPUTE AN AABB  */
+///////////////////////
+function getAABB(object) {
+    const box = new THREE.Box3().setFromObject(object);
+    return box;
+}
 
 ////////////
 /* UPDATE */
 ////////////
 function update() {
-   const robot = scene.children.find(obj => obj instanceof THREE.Group);
-    if (robot) {
+    
+    // Check for collision
+    if (!isTrailerAttached && checkCollisions()) {
+        isConnecting = true;
+    }
+
+    if (isConnecting && !isTrailerAttached) {
+        handleCollisions();
+    }
+
+    if (robot && !isTrailerAttached && !isConnecting) {
+    
         if (rotateTheta1Up) theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
         if (rotateTheta1Down) theta1 = Math.max(theta1 - 0.05, 0);
         if (robot.feet) {
@@ -812,28 +883,32 @@ function update() {
             robot.arms.leftArm.position.x = -delta1;
             robot.arms.rightArm.position.x = delta1;
         }
-
-        // Trailer movement (modeY, moveX)
-        if (trailerRef) {
-            const trailerDirection = new THREE.Vector3(moveY, 0, -moveX);
-            if (trailerDirection.lengthSq() > 0) {
-                trailerDirection.normalize();
-                trailerRef.position.addScaledVector(trailerDirection, 0.05);
+    }
+    // Trailer movement (modeY, moveX)
+    if (trailer && !isConnecting) {
+        const trailerDirection = new THREE.Vector3(moveY, 0, -moveX);
+        if (trailerDirection.lengthSq() > 0) {
+            trailerDirection.normalize();
+            trailer.position.addScaledVector(trailerDirection, 0.05);
+            // If Trailer is Attached they move together
+            if (isTrailerAttached){
+                robot.position.addScaledVector(trailerDirection, 0.05);
             }
         }
-        if (toggleWireframe) {
-            isWireframe = !isWireframe;
-            scene.traverse(obj => {
-                if (obj.isMesh && obj.material) {
-                    if (Array.isArray(obj.material)) {
-                        obj.material.forEach(mat => mat.wireframe = isWireframe);
-                    } else {
-                        obj.material.wireframe = isWireframe;
-                    }
+    }
+    // ToggleWireFrame
+    if (toggleWireframe) {
+        isWireframe = !isWireframe;
+        scene.traverse(obj => {
+            if (obj.isMesh && obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(mat => mat.wireframe = isWireframe);
+                } else {
+                    obj.material.wireframe = isWireframe;
                 }
-            });
-            toggleWireframe = false;
-        }
+            }
+        });
+        toggleWireframe = false;
     }
 }
 
@@ -850,9 +925,14 @@ function render() {
 function init() {
     createScene();
     createCameras();
-    scene.add(createRobot());
-    trailerRef = createTrailer(); 
-    scene.add(trailerRef)
+    robot = createRobot();
+    scene.add(robot);
+    trailer = createTrailer(); 
+    scene.add(trailer)
+    // Uncomment to check AABB's
+    //helper1 = new THREE.Box3Helper(new THREE.Box3().setFromObject(robot), 0xff0000);
+    //helper2 = new THREE.Box3Helper(new THREE.Box3().setFromObject(trailer), 0x0000ff);
+    //scene.add(helper1, helper2);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -967,16 +1047,16 @@ function onKeyDown(e) {
             break;
 
         // Trailer Movement
-        case 'ArrowUp':
+        case 'ArrowLeft':
             moveY = 1;
             break;
-        case 'ArrowDown':
+        case 'ArrowRight':
             moveY = -1;
             break;
-        case 'ArrowLeft':
+        case 'ArrowUp':
             moveX = -1;
             break;
-        case 'ArrowRight':
+        case 'ArrowDown':
             moveX = 1;
             break;
     }
@@ -1026,12 +1106,12 @@ function onKeyUp(e) {
             moveArmsOut = false;
             break;
 
-        case 'ArrowUp':
-        case 'ArrowDown':
-            moveY = 0;
-            break;
         case 'ArrowLeft':
         case 'ArrowRight':
+            moveY = 0;
+            break;
+        case 'ArrowUp':
+        case 'ArrowDown':
             moveX = 0;
             break;
     }
