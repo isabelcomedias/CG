@@ -14,12 +14,16 @@ let cameras = {};
 let activeCamera;
 let renderer;
 let controls;
+let trailerRef;
+
 
 // Liberty angles
 let theta1 = 0;
 let theta2 = 0;
 let theta3 = 0;
 let delta1 = 0;
+let deltaX = 0;
+let deltaY = 0;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -98,7 +102,7 @@ function createRobot() {
 function createTrailer() {
     let trailer = new THREE.Group(); // shared root
 
-    trailer.position.set(0, -10, 0);
+    trailer.position.set(0, 0.5, 10);
 
     const { trailerLeftLeg, trailerRightLeg } = createTrailerBody(trailer);
     trailerLeftLeg.rotation.x = Math.PI / 2;
@@ -792,6 +796,16 @@ function update() {
             robot.arms.leftArm.position.x = -delta1;
             robot.arms.rightArm.position.x = delta1;
         }
+        if (trailerRef) {
+            const trailerDirection = new THREE.Vector3(deltaY , 0, -deltaX);
+
+            if (trailerDirection.lengthSq() > 0) {
+                trailerDirection.normalize();
+                trailerRef.position.addScaledVector(trailerDirection, 0.05);
+            }
+            deltaX = 0;
+            deltaY = 0;
+        }
     }
 }
 
@@ -809,7 +823,8 @@ function init() {
     createScene();
     createCameras();
     scene.add(createRobot());
-    scene.add(createTrailer())
+    trailerRef = createTrailer(); 
+    scene.add(trailerRef);  
     //scene.add(createTruck());
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -909,6 +924,18 @@ function onKeyDown(e) {
         case 'D':
         case 'd':
             delta1 = Math.min(0.5, delta1 + 0.05);
+            break;
+        case 'ArrowUp':
+            deltaY += 1;
+            break;
+        case 'ArrowDown':
+            deltaY -= 1;
+            break;
+        case 'ArrowLeft':
+            deltaX -= 1;
+            break;
+        case 'ArrowRight':
+            deltaX += 1;
             break;
     }
 }
