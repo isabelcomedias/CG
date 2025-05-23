@@ -20,7 +20,7 @@ let isWireframe = false;
 let toggleWireframe = false;
 let isTrailerAttached = false;
 let isConnecting = false;
-// let helper1, helper2; Uncomment to check AABB's
+//let helper1, helper2; Uncomment to check AABB's
 
 // Liberty angles
 let rotateTheta1Up = false;
@@ -116,7 +116,7 @@ function createRobot() {
 }
 
 function createTrailer() {
-    let trailer = new THREE.Group(); // shared root
+    let trailer = new THREE.Group();
 
     trailer.position.set(0, 5.5, -20);
 
@@ -188,7 +188,7 @@ function createLegs(robot){
     const tireHeight = 0.6;
 
     // Thigh variables
-    const thighDepth = 0.2; // depth of the thigh
+    const thighDepth = 0.2;
     const thighHeight = 1;
 
     // Distance variables
@@ -255,9 +255,9 @@ function createLegs(robot){
 function createThighs(robot){
 
     // Thigh variables
-    const thighHeight = 1; // height of the thigh
-    const thighDepth = 0.2; // depth of the thigh
-    const thighLenght = 0.6; // width of the thigh
+    const thighHeight = 1;
+    const thighDepth = 0.2;
+    const thighLenght = 0.6;
 
     // Leg variable
     const heightLeg = 4.5;
@@ -681,7 +681,7 @@ function createForearms(leftArm, rightArm) {
 function createTrailerBody(trailer){
 
     // Leg variables
-    const trailerLenght = 6;
+    const trailerLenght = 5;
     const trailerDepth = 0.6;
     const trailerHeight = 1;
 
@@ -744,7 +744,34 @@ function createTrailerBody(trailer){
 
     trailerRightLeg.add(rightTireMid);
 
+    createConnectorPiece(trailerLeftLeg, trailerRightLeg)
+
     return { trailerLeftLeg, trailerRightLeg };
+}
+
+
+function createConnectorPiece(trailerLeftLeg, trailerRightLeg) {
+
+    const footHeight = 1;
+    const footDepth = 1.2;
+    const footLength = 0.5; 
+
+    // Leg variables
+    const trailerDepth = 0.6;
+    const trailerLenght = 5;
+
+    const footGeometry = new THREE.BoxGeometry(footLength, footHeight, footDepth);
+    const footMaterial = new THREE.MeshStandardMaterial({ color: 0x8B5A2B });
+
+    // LEFT FOOT
+    const leftFoot = new THREE.Mesh(footGeometry, footMaterial);
+    leftFoot.position.set(footLength/2, trailerLenght + footHeight/2 , -trailerDepth/2);
+    trailerLeftLeg.add(leftFoot);
+
+    // RIGHT FOOT
+    const rightFoot = new THREE.Mesh(footGeometry, footMaterial);
+    rightFoot.position.set(-footLength/2, trailerLenght + footHeight/2, -trailerDepth/2);
+    trailerRightLeg.add(rightFoot);
 }
 
 function createContainer(trailer) {
@@ -842,9 +869,10 @@ function getAABB(object) {
 /* UPDATE */
 ////////////
 function update() {
+    let detachCooldown = 0;
     
     // Check for collision
-    if (!isTrailerAttached && checkCollisions()) {
+    if (!isTrailerAttached && checkCollisions() && detachCooldown === 0) {
         isConnecting = true;
     }
 
@@ -852,7 +880,7 @@ function update() {
         handleCollisions();
     }
 
-    if (robot && !isTrailerAttached && !isConnecting) {
+    if (robot&& !isTrailerAttached && !isConnecting) {
     
         if (rotateTheta1Up) theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
         if (rotateTheta1Down) theta1 = Math.max(theta1 - 0.05, 0);
@@ -1048,16 +1076,16 @@ function onKeyDown(e) {
 
         // Trailer Movement
         case 'ArrowLeft':
-            moveY = 1;
-            break;
-        case 'ArrowRight':
             moveY = -1;
             break;
+        case 'ArrowRight':
+            moveY = 1;
+            break;
         case 'ArrowUp':
-            moveX = -1;
+            moveX = 1;
             break;
         case 'ArrowDown':
-            moveX = 1;
+            moveX = -1;
             break;
     }
 }
