@@ -869,10 +869,9 @@ function getAABB(object) {
 /* UPDATE */
 ////////////
 function update() {
-    let detachCooldown = 0;
     
     // Check for collision
-    if (!isTrailerAttached && checkCollisions() && detachCooldown === 0) {
+    if (!isTrailerAttached && checkCollisions()) {
         isConnecting = true;
     }
 
@@ -880,7 +879,7 @@ function update() {
         handleCollisions();
     }
 
-    if (robot&& !isTrailerAttached && !isConnecting) {
+    if (robot && !isTrailerAttached && !isConnecting) {
     
         if (rotateTheta1Up) theta1 = Math.min(theta1 + 0.05, Math.PI / 2);
         if (rotateTheta1Down) theta1 = Math.max(theta1 - 0.05, 0);
