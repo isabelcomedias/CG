@@ -177,6 +177,76 @@ function createMoon() {
   scene.add(moonMesh);
 }
 
+function createSobreiro() {
+    const sobreiro = new THREE.Group();
+
+    const troncoMaterial = new THREE.MeshStandardMaterial({ color: 0xCC6600 });
+
+    // Tronco principal
+    const troncoGeometry = new THREE.CylinderGeometry(0.7, 1, 4.5, 16);
+    const tronco = new THREE.Mesh(troncoGeometry, troncoMaterial);
+    tronco.position.y = 2.25;
+    tronco.rotation.z = THREE.MathUtils.degToRad(15); // inclinado
+    sobreiro.add(tronco);
+
+    // Ramo secundário
+    const ramoSecGeometry = new THREE.CylinderGeometry(0.5, 0.6, 6, 16);
+    ramoSecGeometry.translate(0, 2, 0);
+    const ramoSec = new THREE.Mesh(ramoSecGeometry, troncoMaterial);
+    ramoSec.position.y = 2.25;
+    ramoSec.position.x = 0.6;
+    ramoSec.rotation.z = THREE.MathUtils.degToRad(-30);
+    sobreiro.add(ramoSec);
+
+    // Ramo terciário
+    const ramoTerGeometry = new THREE.CylinderGeometry(0.4, 0.5, 3, 16);
+    ramoTerGeometry.translate(0, 1.5, 0);
+    const ramoTer = new THREE.Mesh(ramoTerGeometry, troncoMaterial);
+    ramoTer.position.y = 4.5;
+    ramoTer.position.x = 1.5;
+    ramoTer.rotation.z = THREE.MathUtils.degToRad(30);
+    sobreiro.add(ramoTer);
+
+    // 🌿 Novo ramo diagonal para a esquerda no topo do tronco
+    const ramoEsqTopoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 4, 16);
+    ramoEsqTopoGeometry.translate(0, 1.5, 0);
+    const ramoEsqTopo = new THREE.Mesh(ramoEsqTopoGeometry, troncoMaterial);
+    ramoEsqTopo.position.y = 4.5;
+    ramoEsqTopo.position.x = -0.6;
+    ramoEsqTopo.rotation.y = THREE.MathUtils.degToRad(20); // gira 20 graus no Y
+    ramoEsqTopo.rotation.z = THREE.MathUtils.degToRad(45); // maior inclinação
+    sobreiro.add(ramoEsqTopo);
+
+
+    const copaMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 }); // verde-escuro
+
+    function criarCopa(escala, posY) {
+        const copaGeometry = new THREE.SphereGeometry(1.2, 16, 16);
+        const copaMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
+        const copa = new THREE.Mesh(copaGeometry, copaMaterial);
+        copa.scale.set(escala[0], escala[1], escala[2]);
+        copa.position.y = posY;
+        return copa;
+    }
+
+    // Copa no ramo superior esquerdo
+    const copaEsq = criarCopa([1.5, 2, 2], 4);
+    ramoEsqTopo.add(copaEsq);
+
+    // Copa no ramo secundário
+    const copaSec = criarCopa([1.5, 2, 2], 6);
+    ramoSec.add(copaSec);
+
+    // Copa no ramo terciário
+    const copaTer = criarCopa([1.5, 1.8, 2], 3);
+    ramoTer.add(copaTer);
+    
+
+    return sobreiro;
+}
+
+
+
 
 //////////////////////
 /* CHECK COLLISIONS */
@@ -208,6 +278,9 @@ function init() {
   createCamera();
   createLights();
   createMoon();
+  const sobreiro = createSobreiro();
+  sobreiro.position.set(0, 15, 0);
+  scene.add(sobreiro);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
