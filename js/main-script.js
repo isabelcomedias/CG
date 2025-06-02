@@ -363,9 +363,9 @@ function onKeyDown(e) {
   keysPressed[e.key] = true;
 
   if (e.key === "1") {
-    terrainMesh.material.map = fieldTexture;
+    terrainMesh.material.map = generateFieldTexture();
   } else if (e.key === "2") {
-    terrainMesh.material.map = skyTexture;
+    skyMesh.material.map = generateSkyTexture();
   } else if (e.key.toLowerCase() === "d") {
     directionalLight.visible = !directionalLight.visible;
   }
