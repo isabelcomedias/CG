@@ -15,6 +15,7 @@ let fieldTexture;
 let skyTexture;
 let skyMesh;
 let moonMesh;
+let sobreirosPendentes = [];
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
 
@@ -137,6 +138,10 @@ function loadHeightmapAndCreateTerrain(url) {
     terrainMesh = new THREE.Mesh(geometry, material);
     terrainMesh.rotation.x = -Math.PI / 2; // rotate to horizontal
     scene.add(terrainMesh);
+    
+    // Distribuir 30 sobreiros pelo terreno
+    distribuirSobreiros(30);
+
   };
   img.src = url;
 }
@@ -245,6 +250,35 @@ function createSobreiro() {
     return sobreiro;
 }
 
+function distribuirSobreiros(n) {
+  const positions = terrainMesh.geometry.attributes.position;
+  const terrainSize = 150;
+  const divisions = 256;
+
+  for (let i = 0; i < n; i++) {
+    const sobreiro = createSobreiro();
+
+    const posX = (Math.random() - 0.5) * 140;
+    const posZ = (Math.random() - 0.5) * 140;
+
+    // Convert to grid index
+    const x = posX + terrainSize / 2;
+    const z = posZ + terrainSize / 2;
+    const iGrid = Math.floor((x / terrainSize) * (divisions - 1));
+    const jGrid = Math.floor((z / terrainSize) * (divisions - 1));
+    const index = jGrid * divisions + iGrid;
+
+    const altura = positions.getZ(index);
+
+    sobreiro.position.set(posX, altura, posZ);
+    sobreiro.rotation.y = Math.random() * Math.PI * 2;
+
+    const escala = 0.8 + Math.random() * 0.7;
+    sobreiro.scale.set(escala, escala, escala);
+
+    scene.add(sobreiro);
+  }
+}
 
 
 
@@ -278,9 +312,6 @@ function init() {
   createCamera();
   createLights();
   createMoon();
-  const sobreiro = createSobreiro();
-  sobreiro.position.set(0, 15, 0);
-  scene.add(sobreiro);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
