@@ -15,7 +15,7 @@ let fieldTexture;
 let skyTexture;
 let skyMesh;
 let moonMesh;
-let sobreirosPendentes = [];
+
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
 
@@ -139,8 +139,10 @@ function loadHeightmapAndCreateTerrain(url) {
     terrainMesh.rotation.x = -Math.PI / 2; // rotate to horizontal
     scene.add(terrainMesh);
     
-    // Distribuir 30 sobreiros pelo terreno
-    distribuirSobreiros(30);
+    createCasaAlentejana(-10, -30); // Pos (x,z)
+
+    // Distribuir 50 sobreiros pelo terreno
+    distribuirSobreiros(50);
 
   };
   img.src = url;
@@ -255,11 +257,17 @@ function distribuirSobreiros(n) {
   const terrainSize = 150;
   const divisions = 256;
 
-  for (let i = 0; i < n; i++) {
-    const sobreiro = createSobreiro();
+  let count = 0;
 
+  while (count < n) {
+    const sobreiro = createSobreiro();
     const posX = (Math.random() - 0.5) * 140;
     const posZ = (Math.random() - 0.5) * 140;
+
+    // Skip if position is inside the restricted zone near the house
+    if (posX >= -22 && posX <= 0 && posZ >= -54 && posZ <= -12) {
+      continue;
+    }
 
     // Convert to grid index
     const x = posX + terrainSize / 2;
@@ -277,8 +285,142 @@ function distribuirSobreiros(n) {
     sobreiro.scale.set(escala, escala, escala);
 
     scene.add(sobreiro);
+    count++;
   }
 }
+
+
+function createCasaAlentejana(posX, posZ) {
+  const casa = new THREE.Group();
+  const altura = 10.41;
+
+  // ========================
+  // 1. Corpo da casa (branco)
+  // ========================
+  const corpoGeometry = new THREE.BoxGeometry(6, 5, 15);
+  const corpoMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const corpo = new THREE.Mesh(corpoGeometry, corpoMaterial);
+  corpo.position.set(0, 2.5, 0);
+  casa.add(corpo);
+
+  // ========================
+  // 2. Telhado (laranja)
+  // ========================
+  const telhadoMaterial = new THREE.MeshStandardMaterial({ color: 0xff6600, side: THREE.DoubleSide });
+  const telhadoHeight = 1;
+
+  // Telhado de duas águas (lado esquerdo e direito)
+
+  const roofGeo = new THREE.PlaneGeometry(5.67, 16);
+
+  const roofLeft = new THREE.Mesh(roofGeo, telhadoMaterial);
+
+  roofLeft.rotation.x =  Math.PI / 2;
+  roofLeft.rotation.y = -Math.PI / 4;
+  
+  roofLeft.position.set(2, 5 + telhadoHeight, 0);
+  casa.add(roofLeft);
+
+  const roofRight = new THREE.Mesh(roofGeo, telhadoMaterial);
+  roofRight.rotation.x = Math.PI / 2;
+  roofRight.rotation.y =  Math.PI / 4;
+  // Posicionar no topo da casa, no lado direito (x positivo)
+  roofRight.position.set(-2, 5 + telhadoHeight, 0);
+  casa.add(roofRight);
+
+  // ========================
+  // 3. Triângulo frontal (branco)
+  // ========================
+  const triangleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+
+  // Define a triangle shape (front and back)
+  const triangleShape = new THREE.Shape();
+  triangleShape.moveTo(-3, 0);        // bottom left
+  triangleShape.lineTo(0, 3);         // top center
+  triangleShape.lineTo(3, 0);         // bottom right
+  triangleShape.lineTo(-3, 0);        // close shape
+
+  // Create geometry from the shape
+  const triangleGeometry = new THREE.ShapeGeometry(triangleShape);
+
+  // Frontal triangle
+  const triangleFront = new THREE.Mesh(triangleGeometry, triangleMaterial);
+  triangleFront.position.set(0, 5, 7.5);   // at top front face
+  casa.add(triangleFront);
+
+  // Back triangle
+  const triangleBack = triangleFront.clone();
+  triangleBack.position.z = -7.5;         // move to back
+  casa.add(triangleBack);
+
+  // ========================
+  // 4. Porta (azul)
+  // ========================
+  const portaGeometry = new THREE.BoxGeometry(1.15, 2.5, 0.1);
+  const portaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff  });
+  const porta = new THREE.Mesh(portaGeometry, portaMaterial);
+  porta.position.set(3, 2, 2); 
+  porta.rotation.y = Math.PI / 2;
+
+
+  casa.add(porta);
+
+  // ========================
+  // 5. Janelas (azul)
+  // ========================
+  const janelaGeometry = new THREE.BoxGeometry(1, 1.2, 0.1);
+  const janelaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff  });
+
+  const janela1 = new THREE.Mesh(janelaGeometry, janelaMaterial);
+  janela1.position.set(3, 2.5, 6.3);
+  janela1.rotation.y = Math.PI / 2;
+  casa.add(janela1);
+
+  const janela2 = janela1.clone();
+  janela2.position.z = 4.3;
+  casa.add(janela2);
+  const janela3 = janela1.clone();
+  janela3.position.z = -1.75;
+  casa.add(janela3);
+  const janela4 = janela1.clone();
+  janela4.position.z = -6.25;
+  casa.add(janela4);
+
+  // ========================
+  // 6. Faixa azul inferior
+  // ========================
+  const faixaGeometry = new THREE.BoxGeometry(6.01, 1, 15); // segue o corpo da casa
+  const faixaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+  const faixa = new THREE.Mesh(faixaGeometry, faixaMaterial);
+  faixa.position.set(0, 0.4, 0);
+  casa.add(faixa);
+
+  // ========================
+  // 7. Chaminé (branca com topo)
+  // ========================
+  const chamineBaseGeo = new THREE.BoxGeometry(1, 1.4, 2.5);
+  const chamineBaseMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const chamine = new THREE.Mesh(chamineBaseGeo, chamineBaseMat);
+
+  // Posicionada no lado esquerdo do telhado
+  chamine.position.set(2.8, 5.6, -4); // ajuste fino conforme necessário
+  casa.add(chamine);
+
+  // Topo da chaminé (laranja)
+  const topoChamineGeo = new THREE.BoxGeometry(1.3, 0.2, 2.8);
+  const topoChamineMat = new THREE.MeshStandardMaterial({ color: 0xff6600 });
+  const topoChamine = new THREE.Mesh(topoChamineGeo, topoChamineMat);
+  topoChamine.position.set(0, 0.7, 0);
+  chamine.add(topoChamine);
+
+  // ========================
+  // Posição da casa no terreno
+  // ========================
+  casa.position.set(posX, altura, posZ);
+  casa.scale.set(1.2, 1.2, 1.2); // Scale 20% larger in all directions
+  scene.add(casa);
+}
+
 
 
 
