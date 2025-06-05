@@ -15,6 +15,11 @@ let fieldTexture;
 let skyTexture;
 let skyMesh;
 let moonMesh;
+let ufoGroup, pointLights = [], spotLight;
+let pointLightsOn = true;
+let spotLightOn = true;
+let moveX = 0;
+let moveY = 0;
 
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
@@ -414,23 +419,69 @@ function createCasaAlentejana(posX, posZ) {
   scene.add(casa);
 }
 
+function createUFO() {
+  ufoGroup = new THREE.Group();
 
+  // corpo da nave (esfera achatada)
+  const baseGeometry = new THREE.SphereGeometry(5, 32, 32);
+  baseGeometry.scale(1, 0.3, 1);
+  const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6, roughness: 0.4 });
+  const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+  ufoGroup.add(baseMesh);
 
+  // cockpit (calote esférica transparente)
+  const cockpitGeometry = new THREE.SphereGeometry(2, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+  const cockpitMaterial = new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 });
+  const cockpitMesh = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+  cockpitMesh.position.y = 1.2;
+  ufoGroup.add(cockpitMesh);
 
-//////////////////////
-/* CHECK COLLISIONS */
-//////////////////////
-function checkCollisions() {}
+  // pequenas esferas com luzes pontuais na base
+  const bulbGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const x = Math.cos(angle) * 3.5;
+    const z = Math.sin(angle) * 3.5;
 
-///////////////////////
-/* HANDLE COLLISIONS */
-///////////////////////
-function handleCollisions() {}
+    const bulb = new THREE.Mesh(bulbGeometry, new THREE.MeshStandardMaterial({ color: 0xffff00 }));
+    bulb.position.set(x, -1.2, z);
+    ufoGroup.add(bulb);
+
+    const light = new THREE.PointLight(0xffff88, 1, 10);
+    light.position.set(x, -1.2, z);
+    pointLights.push(light);
+    ufoGroup.add(light);
+  }
+
+  // cilindro com spotlight no centro da base
+  const cylinderGeometry = new THREE.CylinderGeometry(0.4, 0.8, 0.3, 16);
+  const cylinderMaterial = new THREE.MeshStandardMaterial({ color: 0x3333ff });
+  const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+  cylinder.position.set(0, -1.4, 0);
+  ufoGroup.add(cylinder);
+
+  spotLight = new THREE.SpotLight(0x0fffff, 10, 50, Math.PI / 6, 0.4, 0.8);
+  spotLight.position.set(0, 0, 0);
+  spotLight.target.position.set(0, -5, 0);
+  ufoGroup.add(spotLight);
+  ufoGroup.add(spotLight.target);
+  ufoGroup.position.set(-15, 35, -35);
+  scene.add(ufoGroup);
+}
+
 
 ////////////
 /* UPDATE */
 ////////////
-function update() {}
+function update() {
+  controls.update();
+  if (ufoGroup) {
+    // movimento da nave com as setas
+    ufoGroup.position.x += moveX;
+    ufoGroup.position.z += moveY;
+    ufoGroup.rotation.y += 0.02; // rotação contínua sobre o seu eixo de simetria (y)
+  }
+}
 
 /////////////
 /* DISPLAY */
@@ -447,6 +498,7 @@ function init() {
   createCamera();
   createLights();
   createMoon();
+  createUFO();
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -475,8 +527,8 @@ function init() {
 /////////////////////
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
+  update();
+  render();
 }
 
 ////////////////////////////
@@ -502,6 +554,20 @@ function onKeyDown(e) {
     skyMesh.material.map = generateSkyTexture();
   } else if (e.key.toLowerCase() === "d") {
     directionalLight.visible = !directionalLight.visible;
+  } else if (e.key.toLowerCase() === "p") {
+    pointLightsOn = !pointLightsOn;
+    pointLights.forEach(light => light.visible = pointLightsOn);
+  } else if (e.key.toLowerCase() === "s") {
+    spotLightOn = !spotLightOn;
+    spotLight.visible = spotLightOn;
+  } else if (e.key === 'ArrowLeft') {
+    moveY = -0.5;
+  } else if (e.key === 'ArrowRight') {
+    moveY = 0.5;
+  } else if (e.key === 'ArrowUp') {
+    moveX = 0.5;
+  } else if (e.key === 'ArrowDown') {
+    moveX = -0.5;
   }
 }
 
@@ -510,6 +576,11 @@ function onKeyDown(e) {
 ///////////////////////
 function onKeyUp(e) {
     keysPressed[e.key] = false;
+
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+      moveY = 0;
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown')
+      moveX = 0;
 }
 
 init();
