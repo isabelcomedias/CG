@@ -39,10 +39,10 @@ function createCamera() {
 /////////////////////
 function createLights() {
 
-  // Directional light at an angle (simulating sunlight)
+  // directional ligh
     directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    directionalLight.position.set(30, 90, 0); // Tilted relative to xOy plane
-    directionalLight.castShadow = false; // Controls light
+    directionalLight.position.set(30, 90, 0); // tilted relative to xy
+    directionalLight.castShadow = false; // controls light
     scene.add(directionalLight);
 }
 
@@ -63,7 +63,7 @@ function generateSkyTexture() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, size, size);
 
-  // Add stars as white dots
+  // add 500 white dots (stars)
   for (let i = 0; i < 500; i++) {
     const x = Math.random() * size;
     const y = Math.random() * size;
@@ -83,11 +83,11 @@ function generateFieldTexture() {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  // Background light green
+  // background light green
   ctx.fillStyle = "#90ee90";
   ctx.fillRect(0, 0, size, size);
 
-  // Draw flowers using different colors
+  // colors for flowers
   const colors = ["#ffffff", "#ffeb3b", "#9c27b0", "#03a9f4"];
 
   for (let i = 0; i < 600; i++) {
@@ -115,27 +115,31 @@ function loadHeightmapAndCreateTerrain(url) {
 
     const imgData = ctx.getImageData(0, 0, size, size).data;
 
-    // Create plane geometry with the same resolution as the image
-    const geometry = new THREE.PlaneGeometry(150, 150, size - 1, size - 1);
+    // create a plane geometry using size - 1 vertices (so it doesnt stretch the texture)
+    // 150x150 plane with 255x255 vertices
+    const plane_geometry = new THREE.PlaneGeometry(150, 150, size - 1, size - 1);
 
-    // Adjust vertex heights from heightmap grayscale values
-    for (let i = 0; i < geometry.attributes.position.count; i++) {
+    // we go trough each vertex (256x256) and set its height based on the pixel data
+    // high areas -> light pixels (255)
+    // low areas -> darker pixels (0) 
+    for (let i = 0; i < plane_geometry.attributes.position.count; i++) {
       const x = i % size;
       const y = Math.floor(i / size);
       const pixelIndex = (y * size + x) * 4;
       const height = (imgData[pixelIndex] / 255) * 15; // scale height max 15 units
-      geometry.attributes.position.setZ(i, height);
+      plane_geometry.attributes.position.setZ(i, height);
     }
 
-    geometry.computeVertexNormals();
+    //update the normals
+    plane_geometry.computeVertexNormals();
 
-    // Apply field texture to the terrain
+    // apply the texture to the terrain 
     const material = new THREE.MeshStandardMaterial({
         map: fieldTexture,
         side: THREE.DoubleSide,
     });
 
-    terrainMesh = new THREE.Mesh(geometry, material);
+    terrainMesh = new THREE.Mesh(plane_geometry, material);
     terrainMesh.rotation.x = -Math.PI / 2; // rotate to horizontal
     scene.add(terrainMesh);
     
@@ -150,23 +154,19 @@ function loadHeightmapAndCreateTerrain(url) {
 
 function createSkyDome(skyTexture) {
     
-  const geometry = new THREE.SphereGeometry(250, 32, 32);
-  /*
-  const material = new THREE.MeshBasicMaterial({
-    map: skyTexture,
-    side: THREE.BackSide,
-  });*/
+  const sphere_geometry = new THREE.SphereGeometry(250, 32, 32);
+
   const material = new THREE.MeshStandardMaterial({
   map: skyTexture,
   side: THREE.BackSide,
     });
   
-  skyMesh = new THREE.Mesh(geometry, material);
+  skyMesh = new THREE.Mesh(sphere_geometry, material);
   scene.add(skyMesh);
 }
 
 function createMoon() {
-  const geometry = new THREE.SphereGeometry(10, 32, 32);
+  const moon_geometry = new THREE.SphereGeometry(10, 32, 32);
 
   const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
@@ -176,9 +176,8 @@ function createMoon() {
     metalness: 0.0
   });
 
-  moonMesh = new THREE.Mesh(geometry, material);
+  moonMesh = new THREE.Mesh(moon_geometry, material);
 
-  // Position the moon in the sky
   moonMesh.position.set(100, 80, -150);
 
   scene.add(moonMesh);
@@ -461,14 +460,13 @@ function init() {
 
   controls = new OrbitControls(camera, renderer.domElement); 
   controls.target.set(0, 0, 0);
-  controls.maxDistance = 250;    // Stay within the sky dome radius
+  controls.maxDistance = 250;    // stay within the sky dome radius)
   controls.update();
 
   fieldTexture = generateFieldTexture();
   skyTexture = generateSkyTexture();
   createSkyDome(skyTexture);
 
-  // Load heightmap and create terrain
   loadHeightmapAndCreateTerrain(HEIGHTMAP_URL);
 
   window.addEventListener("resize", onResize);
