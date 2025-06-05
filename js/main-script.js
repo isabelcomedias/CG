@@ -130,7 +130,7 @@ function loadHeightmapAndCreateTerrain(url) {
       plane_geometry.attributes.position.setZ(i, height);
     }
 
-    //update the normals
+    // update the normals
     plane_geometry.computeVertexNormals();
 
     // apply the texture to the terrain 
@@ -145,8 +145,8 @@ function loadHeightmapAndCreateTerrain(url) {
     
     createCasaAlentejana(-10, -30); // Pos (x,z)
 
-    // Distribuir 50 sobreiros pelo terreno
-    distribuirSobreiros(50);
+    // distribute 50 corktrees across the field
+    distributeTrees(50);
 
   };
   img.src = url;
@@ -192,7 +192,7 @@ function createSobreiro() {
     const troncoGeometry = new THREE.CylinderGeometry(0.7, 1, 4.5, 16);
     const tronco = new THREE.Mesh(troncoGeometry, troncoMaterial);
     tronco.position.y = 2.25;
-    tronco.rotation.z = THREE.MathUtils.degToRad(15); // inclinado
+    tronco.rotation.z = THREE.MathUtils.degToRad(15); // inclined
     sobreiro.add(tronco);
 
     // Ramo secundário
@@ -213,18 +213,15 @@ function createSobreiro() {
     ramoTer.rotation.z = THREE.MathUtils.degToRad(30);
     sobreiro.add(ramoTer);
 
-    // 🌿 Novo ramo diagonal para a esquerda no topo do tronco
+    // Novo ramo diagonal para a esquerda no topo do tronco
     const ramoEsqTopoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 4, 16);
     ramoEsqTopoGeometry.translate(0, 1.5, 0);
     const ramoEsqTopo = new THREE.Mesh(ramoEsqTopoGeometry, troncoMaterial);
     ramoEsqTopo.position.y = 4.5;
     ramoEsqTopo.position.x = -0.6;
-    ramoEsqTopo.rotation.y = THREE.MathUtils.degToRad(20); // gira 20 graus no Y
-    ramoEsqTopo.rotation.z = THREE.MathUtils.degToRad(45); // maior inclinação
+    ramoEsqTopo.rotation.y = THREE.MathUtils.degToRad(20); // rotate 20 degrees y axis
+    ramoEsqTopo.rotation.z = THREE.MathUtils.degToRad(45); // more inclined
     sobreiro.add(ramoEsqTopo);
-
-
-    const copaMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 }); // verde-escuro
 
     function criarCopa(escala, posY) {
         const copaGeometry = new THREE.SphereGeometry(1.2, 16, 16);
@@ -247,11 +244,10 @@ function createSobreiro() {
     const copaTer = criarCopa([1.5, 1.8, 2], 3);
     ramoTer.add(copaTer);
     
-
     return sobreiro;
 }
 
-function distribuirSobreiros(n) {
+function distributeTrees(n) {
   const positions = terrainMesh.geometry.attributes.position;
   const terrainSize = 150;
   const divisions = 256;
@@ -263,24 +259,24 @@ function distribuirSobreiros(n) {
     const posX = (Math.random() - 0.5) * 140;
     const posZ = (Math.random() - 0.5) * 140;
 
-    // Skip if position is inside the restricted zone near the house
+    // skip if position is inside the restricted zone near the house
     if (posX >= -22 && posX <= 0 && posZ >= -54 && posZ <= -12) {
       continue;
     }
 
-    // Convert to grid index
+    // convert to grid index to get the respective height
     const x = posX + terrainSize / 2;
     const z = posZ + terrainSize / 2;
     const iGrid = Math.floor((x / terrainSize) * (divisions - 1));
     const jGrid = Math.floor((z / terrainSize) * (divisions - 1));
     const index = jGrid * divisions + iGrid;
 
-    const altura = positions.getZ(index);
+    const height = positions.getZ(index);
 
-    sobreiro.position.set(posX, altura, posZ);
-    sobreiro.rotation.y = Math.random() * Math.PI * 2;
+    sobreiro.position.set(posX, height, posZ);
+    sobreiro.rotation.y = Math.random() * Math.PI * 2; // random rotation on y axis
 
-    const escala = 0.8 + Math.random() * 0.7;
+    const escala = 0.8 + Math.random() * 0.7;  // random scaling of the tree
     sobreiro.scale.set(escala, escala, escala);
 
     scene.add(sobreiro);
@@ -313,43 +309,41 @@ function createCasaAlentejana(posX, posZ) {
   const roofGeo = new THREE.PlaneGeometry(5.67, 16);
 
   const roofLeft = new THREE.Mesh(roofGeo, telhadoMaterial);
-
   roofLeft.rotation.x =  Math.PI / 2;
   roofLeft.rotation.y = -Math.PI / 4;
-  
   roofLeft.position.set(2, 5 + telhadoHeight, 0);
   casa.add(roofLeft);
 
   const roofRight = new THREE.Mesh(roofGeo, telhadoMaterial);
   roofRight.rotation.x = Math.PI / 2;
   roofRight.rotation.y =  Math.PI / 4;
-  // Posicionar no topo da casa, no lado direito (x positivo)
   roofRight.position.set(-2, 5 + telhadoHeight, 0);
   casa.add(roofRight);
 
   // ========================
   // 3. Triângulo frontal (branco)
   // ========================
+  // (This is used to cover the sides of the roof)
   const triangleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
-  // Define a triangle shape (front and back)
+  // Define a triangle shape
   const triangleShape = new THREE.Shape();
-  triangleShape.moveTo(-3, 0);        // bottom left
-  triangleShape.lineTo(0, 3);         // top center
-  triangleShape.lineTo(3, 0);         // bottom right
-  triangleShape.lineTo(-3, 0);        // close shape
+  triangleShape.moveTo(-3, 0);
+  triangleShape.lineTo(0, 3);       
+  triangleShape.lineTo(3, 0);      
+  triangleShape.lineTo(-3, 0);       
 
   // Create geometry from the shape
   const triangleGeometry = new THREE.ShapeGeometry(triangleShape);
 
   // Frontal triangle
   const triangleFront = new THREE.Mesh(triangleGeometry, triangleMaterial);
-  triangleFront.position.set(0, 5, 7.5);   // at top front face
+  triangleFront.position.set(0, 5, 7.5);
   casa.add(triangleFront);
 
   // Back triangle
   const triangleBack = triangleFront.clone();
-  triangleBack.position.z = -7.5;         // move to back
+  triangleBack.position.z = -7.5;// move to back
   casa.add(triangleBack);
 
   // ========================
@@ -402,7 +396,7 @@ function createCasaAlentejana(posX, posZ) {
   const chamine = new THREE.Mesh(chamineBaseGeo, chamineBaseMat);
 
   // Posicionada no lado esquerdo do telhado
-  chamine.position.set(2.8, 5.6, -4); // ajuste fino conforme necessário
+  chamine.position.set(2.8, 5.6, -4);
   casa.add(chamine);
 
   // Topo da chaminé (laranja)
