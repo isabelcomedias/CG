@@ -84,9 +84,9 @@ function generateSkyTexture() {
 
 function generateFieldTexture() {
   const size = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = size;
-  const ctx = canvas.getContext("2d");
+  const drawing_surface = document.createElement("canvas");
+  drawing_surface.width = drawing_surface.height = size;
+  const ctx = drawing_surface.getContext("2d");
 
   // background light green
   ctx.fillStyle = "#90ee90";
@@ -105,18 +105,18 @@ function generateFieldTexture() {
     ctx.fill();
   }
 
-  return new THREE.CanvasTexture(canvas);
+  return new THREE.CanvasTexture(drawing_surface);
 }
 
 function loadHeightmapAndCreateTerrain(url) {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.onload = () => {
     const size = 256;
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, size, size);
+    ctx.drawImage(image, 0, 0, size, size);
 
     const imgData = ctx.getImageData(0, 0, size, size).data;
 
@@ -154,7 +154,7 @@ function loadHeightmapAndCreateTerrain(url) {
     distributeTrees(50);
 
   };
-  img.src = url;
+  image.src = url;
 }
 
 function createSkyDome(skyTexture) {
@@ -171,19 +171,36 @@ function createSkyDome(skyTexture) {
 }
 
 function createMoon() {
-  const moon_geometry = new THREE.SphereGeometry(10, 32, 32);
 
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    emissive: 0xffffee,
-    emissiveIntensity: 1.5,
-    roughness: 0.5,
-    metalness: 0.0
-  });
+  window.moonMaterials = {
+    lambert: new THREE.MeshLambertMaterial({
+      color: 0xfff8dc,
+      emissive: 0xffffee,
+      emissiveIntensity: 1.5
+    }),
+    phong: new THREE.MeshPhongMaterial({
+      color: 0xfff8dc,
+      emissive: 0xffffee,
+      emissiveIntensity: 1.5,
+      shininess: 50
+    }),
+    toon: new THREE.MeshToonMaterial({
+      color: 0xfff8dc,
+      emissive: 0xffffee,
+      emissiveIntensity: 1.5
+    }),
+    basic: new THREE.MeshBasicMaterial({
+      color: 0xfff8dc
+    })
+  };
 
-  moonMesh = new THREE.Mesh(moon_geometry, material);
+  const moon_geometry = new THREE.SphereGeometry(15, 40, 40);
 
-  moonMesh.position.set(100, 80, -150);
+  moonMesh = new THREE.Mesh(moon_geometry, window.moonMaterials.phong);
+
+  moonMesh = new THREE.Mesh(moon_geometry, window.moonMaterials.phong);
+
+  moonMesh.position.set(100, 80, -170);
 
   scene.add(moonMesh);
 }
@@ -194,7 +211,8 @@ function createSobreiro() {
     window.troncoMaterials = {
       lambert: new THREE.MeshLambertMaterial({ color: 0xcc6600 }),
       phong: new THREE.MeshPhongMaterial({ color: 0xcc6600, shininess: 50 }),
-      toon: new THREE.MeshToonMaterial({ color: 0xcc6600 })
+      toon: new THREE.MeshToonMaterial({ color: 0xcc6600 }),
+      basic: new THREE.MeshBasicMaterial({ color: 0xcc6600 })
     };
 
     // Tronco principal
@@ -243,7 +261,8 @@ function createSobreiro() {
         const copaMaterials = {
           lambert: new THREE.MeshLambertMaterial({ color: 0x003300 }),
           phong: new THREE.MeshPhongMaterial({ color: 0x003300, shininess: 30 }),
-          toon: new THREE.MeshToonMaterial({ color: 0x003300 })
+          toon: new THREE.MeshToonMaterial({ color: 0x003300 }),
+          basic: new THREE.MeshBasicMaterial({ color: 0x003300 })
         };
         const copa = new THREE.Mesh(copaGeometry, copaMaterials.lambert);
         copa.scale.set(escala[0], escala[1], escala[2]);
@@ -324,7 +343,8 @@ function createCasaAlentejana(posX, posZ) {
   window.houseMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0xffffff }),
     phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0xffffff })
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff }),
+    basic: new THREE.MeshBasicMaterial({ color: 0xffffff })
   };
 
   const corpo = new THREE.Mesh(corpoGeometry, houseMaterials.lambert);
@@ -339,7 +359,8 @@ function createCasaAlentejana(posX, posZ) {
   window.roofMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0xff6600, side: THREE.DoubleSide }),
     phong: new THREE.MeshPhongMaterial({ color: 0xff6600, shininess: 200, side: THREE.DoubleSide }),
-    toon: new THREE.MeshToonMaterial({ color: 0xff6600, side: THREE.DoubleSide })
+    toon: new THREE.MeshToonMaterial({ color: 0xff6600, side: THREE.DoubleSide }),
+    basic: new THREE.MeshBasicMaterial({ color: 0xff6600, side: THREE.DoubleSide })
   };
 
   const telhadoHeight = 1;
@@ -368,7 +389,8 @@ function createCasaAlentejana(posX, posZ) {
   window.triangleMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
     phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200, side: THREE.DoubleSide }),
-    toon: new THREE.MeshToonMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
+    basic: new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
   };
 
   const triangleShape = new THREE.Shape();
@@ -398,7 +420,8 @@ function createCasaAlentejana(posX, posZ) {
   window.doorMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
     phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff }),
+    basic: new THREE.MeshBasicMaterial({ color: 0x0077ff })
   };
 
   const porta = new THREE.Mesh(portaGeometry, doorMaterials.lambert);
@@ -416,7 +439,8 @@ function createCasaAlentejana(posX, posZ) {
   window.windowMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
     phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff }),
+    basic: new THREE.MeshBasicMaterial({ color: 0x0077ff })
   };
 
   const janela1 = new THREE.Mesh(janelaGeometry, windowMaterials.lambert);
@@ -447,7 +471,8 @@ function createCasaAlentejana(posX, posZ) {
   window.bandMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
     phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff }),
+    basic: new THREE.MeshBasicMaterial({ color: 0x0077ff })
   };
 
   const faixa = new THREE.Mesh(faixaGeometry, bandMaterials.lambert);
@@ -463,13 +488,15 @@ function createCasaAlentejana(posX, posZ) {
   window.chamineMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0xffffff }),
     phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0xffffff })
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff }),
+    basic: new THREE.MeshBasicMaterial({ color: 0xffffff })
   };
 
   window.topoChamineMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0xff6600 }),
     phong: new THREE.MeshPhongMaterial({ color: 0xff6600, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0xff6600 })
+    toon: new THREE.MeshToonMaterial({ color: 0xff6600 }),
+    basic: new THREE.MeshBasicMaterial({ color: 0xff6600 })
   };
 
   // Geometria
@@ -506,7 +533,8 @@ function createUFO() {
   window.ufoBaseMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0x888888 }),
     phong: new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0x888888 })
+    toon: new THREE.MeshToonMaterial({ color: 0x888888 }),
+    basic: new THREE.MeshBasicMaterial({color: 0x888888 })
   };
 
   const baseMesh = new THREE.Mesh(baseGeometry, ufoBaseMaterials.lambert);
@@ -520,7 +548,8 @@ function createUFO() {
   window.cockpitMaterials = {
     lambert: new THREE.MeshLambertMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 }),
     phong: new THREE.MeshPhongMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7, shininess: 200 }),
-    toon: new THREE.MeshToonMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 })
+    toon: new THREE.MeshToonMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 }),
+    basic: new THREE.MeshBasicMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 })
   };
 
   const cockpitMesh = new THREE.Mesh(cockpitGeometry, cockpitMaterials.lambert);
@@ -662,6 +691,7 @@ function onKeyDown(e) {
   } else if (e.key === 'ArrowDown') {
     moveX = -0.5;
   } else if (e.key.toLowerCase() === 'q') {
+    moonMesh.material = moonMaterials.lambert;
     ufoBaseMesh.material = ufoBaseMaterials.lambert;
     cockpitMesh.material = cockpitMaterials.lambert;
     houseMesh.material = houseMaterials.lambert;
@@ -676,6 +706,7 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.lambert);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.lambert);
   } else if (e.key.toLowerCase() === 'w') {
+    moonMesh.material = moonMaterials.pong;
     ufoBaseMesh.material = ufoBaseMaterials.phong;
     cockpitMesh.material = cockpitMaterials.phong;
     houseMesh.material = houseMaterials.phong;
@@ -690,6 +721,7 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.phong);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.phong);
   } else if (e.key.toLowerCase() === 'e') {
+    moonMesh.material = moonMaterials.toon;
     ufoBaseMesh.material = ufoBaseMaterials.toon;
     cockpitMesh.material = cockpitMaterials.toon;
     houseMesh.material = houseMaterials.toon;
@@ -704,12 +736,20 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.toon);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.toon);
   } else if (e.key.toLowerCase() === 'r') {
-    const visible = scene.children
-      .filter(obj => obj.isLight)
-      .some(light => light.visible);
-    scene.traverse(obj => {
-      if (obj.isLight) obj.visible = !visible;
-    });
+    moonMesh.material = moonMaterials.basic;
+    ufoBaseMesh.material = ufoBaseMaterials.basic;
+    cockpitMesh.material = cockpitMaterials.basic;
+    houseMesh.material = houseMaterials.toon;
+    roofMeshes.forEach(roof => roof.material = roofMaterials.basic);
+    triangleFront.material = triangleMaterials.basic;
+    triangleBack.material = triangleMaterials.basic;
+    doorMesh.material = doorMaterials.basic;
+    windowMeshes.forEach(w => w.material = windowMaterials.basic);
+    bandMesh.material = bandMaterials.basic;
+    chamineMesh.material = chamineMaterials.basic;
+    topoChamineMesh.material = topoChamineMaterials.basic;
+    allTroncoMeshes.forEach(m => m.material = troncoMaterials.basic);
+    allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.basic);
   }
 }
 
