@@ -191,49 +191,64 @@ function createMoon() {
 function createSobreiro() {
     const sobreiro = new THREE.Group();
 
-    const troncoMaterial = new THREE.MeshStandardMaterial({ color: 0xCC6600 });
+    window.troncoMaterials = {
+      lambert: new THREE.MeshLambertMaterial({ color: 0xcc6600 }),
+      phong: new THREE.MeshPhongMaterial({ color: 0xcc6600, shininess: 50 }),
+      toon: new THREE.MeshToonMaterial({ color: 0xcc6600 })
+    };
 
     // Tronco principal
     const troncoGeometry = new THREE.CylinderGeometry(0.7, 1, 4.5, 16);
-    const tronco = new THREE.Mesh(troncoGeometry, troncoMaterial);
+    const tronco = new THREE.Mesh(troncoGeometry, troncoMaterials.lambert);
     tronco.position.y = 2.25;
     tronco.rotation.z = THREE.MathUtils.degToRad(15); // inclined
+    const troncoMeshes = [tronco];
     sobreiro.add(tronco);
 
     // Ramo secundário
     const ramoSecGeometry = new THREE.CylinderGeometry(0.5, 0.6, 6, 16);
     ramoSecGeometry.translate(0, 2, 0);
-    const ramoSec = new THREE.Mesh(ramoSecGeometry, troncoMaterial);
+    const ramoSec = new THREE.Mesh(ramoSecGeometry, troncoMaterials.lambert);
     ramoSec.position.y = 2.25;
     ramoSec.position.x = 0.6;
     ramoSec.rotation.z = THREE.MathUtils.degToRad(-30);
+    troncoMeshes.push(ramoSec);
     sobreiro.add(ramoSec);
 
     // Ramo terciário
     const ramoTerGeometry = new THREE.CylinderGeometry(0.4, 0.5, 3, 16);
     ramoTerGeometry.translate(0, 1.5, 0);
-    const ramoTer = new THREE.Mesh(ramoTerGeometry, troncoMaterial);
+    const ramoTer = new THREE.Mesh(ramoTerGeometry, troncoMaterials.lambert);
     ramoTer.position.y = 4.5;
     ramoTer.position.x = 1.5;
     ramoTer.rotation.z = THREE.MathUtils.degToRad(30);
+    troncoMeshes.push(ramoTer);
     sobreiro.add(ramoTer);
 
     // Novo ramo diagonal para a esquerda no topo do tronco
     const ramoEsqTopoGeometry = new THREE.CylinderGeometry(0.4, 0.6, 4, 16);
     ramoEsqTopoGeometry.translate(0, 1.5, 0);
-    const ramoEsqTopo = new THREE.Mesh(ramoEsqTopoGeometry, troncoMaterial);
+    const ramoEsqTopo = new THREE.Mesh(ramoEsqTopoGeometry, troncoMaterials.lambert);
     ramoEsqTopo.position.y = 4.5;
     ramoEsqTopo.position.x = -0.6;
     ramoEsqTopo.rotation.y = THREE.MathUtils.degToRad(20); // rotate 20 degrees y axis
     ramoEsqTopo.rotation.z = THREE.MathUtils.degToRad(45); // more inclined
+    troncoMeshes.push(ramoEsqTopo);
     sobreiro.add(ramoEsqTopo);
+
+    
 
     function criarCopa(escala, posY) {
         const copaGeometry = new THREE.SphereGeometry(1.2, 16, 16);
-        const copaMaterial = new THREE.MeshStandardMaterial({ color: 0x003300 });
-        const copa = new THREE.Mesh(copaGeometry, copaMaterial);
+        const copaMaterials = {
+          lambert: new THREE.MeshLambertMaterial({ color: 0x003300 }),
+          phong: new THREE.MeshPhongMaterial({ color: 0x003300, shininess: 30 }),
+          toon: new THREE.MeshToonMaterial({ color: 0x003300 })
+        };
+        const copa = new THREE.Mesh(copaGeometry, copaMaterials.lambert);
         copa.scale.set(escala[0], escala[1], escala[2]);
         copa.position.y = posY;
+        copa.userData.materials = copaMaterials;
         return copa;
     }
 
@@ -248,7 +263,10 @@ function createSobreiro() {
     // Copa no ramo terciário
     const copaTer = criarCopa([1.5, 1.8, 2], 3);
     ramoTer.add(copaTer);
-    
+
+    sobreiro.userData.troncos = troncoMeshes;
+    sobreiro.userData.copas = [copaEsq, copaSec, copaTer];
+
     return sobreiro;
 }
 
@@ -258,7 +276,8 @@ function distributeTrees(n) {
   const divisions = 256;
 
   let count = 0;
-
+  window.allTroncoMeshes = [];
+  window.allCopaMeshes = [];
   while (count < n) {
     const sobreiro = createSobreiro();
     const posX = (Math.random() - 0.5) * 140;
@@ -284,6 +303,9 @@ function distributeTrees(n) {
     const escala = 0.8 + Math.random() * 0.7;  // random scaling of the tree
     sobreiro.scale.set(escala, escala, escala);
 
+    allTroncoMeshes.push(...sobreiro.userData.troncos);
+    allCopaMeshes.push(...sobreiro.userData.copas);
+
     scene.add(sobreiro);
     count++;
   }
@@ -298,117 +320,172 @@ function createCasaAlentejana(posX, posZ) {
   // 1. Corpo da casa (branco)
   // ========================
   const corpoGeometry = new THREE.BoxGeometry(6, 5, 15);
-  const corpoMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const corpo = new THREE.Mesh(corpoGeometry, corpoMaterial);
+
+  window.houseMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff })
+  };
+
+  const corpo = new THREE.Mesh(corpoGeometry, houseMaterials.lambert);
+  window.houseMesh = corpo;
+
   corpo.position.set(0, 2.5, 0);
   casa.add(corpo);
 
   // ========================
   // 2. Telhado (laranja)
   // ========================
-  const telhadoMaterial = new THREE.MeshStandardMaterial({ color: 0xff6600, side: THREE.DoubleSide });
+  window.roofMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0xff6600, side: THREE.DoubleSide }),
+    phong: new THREE.MeshPhongMaterial({ color: 0xff6600, shininess: 200, side: THREE.DoubleSide }),
+    toon: new THREE.MeshToonMaterial({ color: 0xff6600, side: THREE.DoubleSide })
+  };
+
   const telhadoHeight = 1;
-
-  // Telhado de duas águas (lado esquerdo e direito)
-
   const roofGeo = new THREE.PlaneGeometry(5.67, 16);
 
-  const roofLeft = new THREE.Mesh(roofGeo, telhadoMaterial);
-  roofLeft.rotation.x =  Math.PI / 2;
+  // Lado esquerdo
+  const roofLeft = new THREE.Mesh(roofGeo, roofMaterials.lambert);
+  roofLeft.rotation.x = Math.PI / 2;
   roofLeft.rotation.y = -Math.PI / 4;
   roofLeft.position.set(2, 5 + telhadoHeight, 0);
   casa.add(roofLeft);
 
-  const roofRight = new THREE.Mesh(roofGeo, telhadoMaterial);
+  // Lado direito
+  const roofRight = new THREE.Mesh(roofGeo, roofMaterials.lambert);
   roofRight.rotation.x = Math.PI / 2;
-  roofRight.rotation.y =  Math.PI / 4;
+  roofRight.rotation.y = Math.PI / 4;
   roofRight.position.set(-2, 5 + telhadoHeight, 0);
   casa.add(roofRight);
+
+  window.roofMeshes = [roofLeft, roofRight];
 
   // ========================
   // 3. Triângulo frontal (branco)
   // ========================
   // (This is used to cover the sides of the roof)
-  const triangleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  window.triangleMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
+    phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200, side: THREE.DoubleSide }),
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff, side: THREE.DoubleSide })
+  };
 
-  // Define a triangle shape
   const triangleShape = new THREE.Shape();
   triangleShape.moveTo(-3, 0);
-  triangleShape.lineTo(0, 3);       
-  triangleShape.lineTo(3, 0);      
-  triangleShape.lineTo(-3, 0);       
+  triangleShape.lineTo(0, 3);
+  triangleShape.lineTo(3, 0);
+  triangleShape.lineTo(-3, 0);
 
-  // Create geometry from the shape
   const triangleGeometry = new THREE.ShapeGeometry(triangleShape);
 
-  // Frontal triangle
-  const triangleFront = new THREE.Mesh(triangleGeometry, triangleMaterial);
+  const triangleFront = new THREE.Mesh(triangleGeometry, triangleMaterials.lambert);
   triangleFront.position.set(0, 5, 7.5);
-  casa.add(triangleFront);
-
-  // Back triangle
   const triangleBack = triangleFront.clone();
-  triangleBack.position.z = -7.5;// move to back
+  triangleBack.position.z = -7.5;
+
+  window.triangleFront = triangleFront;
+  window.triangleBack = triangleBack;
+
+  casa.add(triangleFront);
   casa.add(triangleBack);
 
   // ========================
   // 4. Porta (azul)
   // ========================
   const portaGeometry = new THREE.BoxGeometry(1.15, 2.5, 0.1);
-  const portaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff  });
-  const porta = new THREE.Mesh(portaGeometry, portaMaterial);
-  porta.position.set(3, 2, 2); 
+
+  window.doorMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
+    phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+  };
+
+  const porta = new THREE.Mesh(portaGeometry, doorMaterials.lambert);
+  porta.position.set(3, 2, 2);
   porta.rotation.y = Math.PI / 2;
 
+  window.doorMesh = porta;
 
   casa.add(porta);
-
   // ========================
   // 5. Janelas (azul)
   // ========================
   const janelaGeometry = new THREE.BoxGeometry(1, 1.2, 0.1);
-  const janelaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff  });
 
-  const janela1 = new THREE.Mesh(janelaGeometry, janelaMaterial);
+  window.windowMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
+    phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+  };
+
+  const janela1 = new THREE.Mesh(janelaGeometry, windowMaterials.lambert);
   janela1.position.set(3, 2.5, 6.3);
   janela1.rotation.y = Math.PI / 2;
-  casa.add(janela1);
 
   const janela2 = janela1.clone();
   janela2.position.z = 4.3;
-  casa.add(janela2);
+
   const janela3 = janela1.clone();
   janela3.position.z = -1.75;
-  casa.add(janela3);
+
   const janela4 = janela1.clone();
   janela4.position.z = -6.25;
+
+  window.windowMeshes = [janela1, janela2, janela3, janela4];
+
+  casa.add(janela1);
+  casa.add(janela2);
+  casa.add(janela3);
   casa.add(janela4);
 
   // ========================
   // 6. Faixa azul inferior
   // ========================
   const faixaGeometry = new THREE.BoxGeometry(6.01, 1, 15); // segue o corpo da casa
-  const faixaMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-  const faixa = new THREE.Mesh(faixaGeometry, faixaMaterial);
+
+  window.bandMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0x0077ff }),
+    phong: new THREE.MeshPhongMaterial({ color: 0x0077ff, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0x0077ff })
+  };
+
+  const faixa = new THREE.Mesh(faixaGeometry, bandMaterials.lambert);
   faixa.position.set(0, 0.4, 0);
+
+  window.bandMesh = faixa;
+
   casa.add(faixa);
 
   // ========================
   // 7. Chaminé (branca com topo)
   // ========================
-  const chamineBaseGeo = new THREE.BoxGeometry(1, 1.4, 2.5);
-  const chamineBaseMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-  const chamine = new THREE.Mesh(chamineBaseGeo, chamineBaseMat);
+  window.chamineMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+    phong: new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0xffffff })
+  };
 
-  // Posicionada no lado esquerdo do telhado
+  window.topoChamineMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0xff6600 }),
+    phong: new THREE.MeshPhongMaterial({ color: 0xff6600, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0xff6600 })
+  };
+
+  // Geometria
+  const chamineBaseGeo = new THREE.BoxGeometry(1, 1.4, 2.5);
+  const chamine = new THREE.Mesh(chamineBaseGeo, chamineMaterials.lambert);
+  window.chamineMesh = chamine;
+
   chamine.position.set(2.8, 5.6, -4);
   casa.add(chamine);
 
-  // Topo da chaminé (laranja)
+  // Topo
   const topoChamineGeo = new THREE.BoxGeometry(1.3, 0.2, 2.8);
-  const topoChamineMat = new THREE.MeshStandardMaterial({ color: 0xff6600 });
-  const topoChamine = new THREE.Mesh(topoChamineGeo, topoChamineMat);
+  const topoChamine = new THREE.Mesh(topoChamineGeo, topoChamineMaterials.lambert);
   topoChamine.position.set(0, 0.7, 0);
+  window.topoChamineMesh = topoChamine;
+
   chamine.add(topoChamine);
 
   // ========================
@@ -425,15 +502,31 @@ function createUFO() {
   // corpo da nave (esfera achatada)
   const baseGeometry = new THREE.SphereGeometry(5, 32, 32);
   baseGeometry.scale(1, 0.3, 1);
-  const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.6, roughness: 0.4 });
-  const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+
+  window.ufoBaseMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0x888888 }),
+    phong: new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0x888888 })
+  };
+
+  const baseMesh = new THREE.Mesh(baseGeometry, ufoBaseMaterials.lambert);
+  window.ufoBaseMesh = baseMesh;
+
   ufoGroup.add(baseMesh);
 
   // cockpit (calote esférica transparente)
   const cockpitGeometry = new THREE.SphereGeometry(2, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-  const cockpitMaterial = new THREE.MeshStandardMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 });
-  const cockpitMesh = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+
+  window.cockpitMaterials = {
+    lambert: new THREE.MeshLambertMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 }),
+    phong: new THREE.MeshPhongMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7, shininess: 200 }),
+    toon: new THREE.MeshToonMaterial({ color: 0x66ccff, transparent: true, opacity: 0.7 })
+  };
+
+  const cockpitMesh = new THREE.Mesh(cockpitGeometry, cockpitMaterials.lambert);
   cockpitMesh.position.y = 1.2;
+  window.cockpitMesh = cockpitMesh;
+
   ufoGroup.add(cockpitMesh);
 
   // pequenas esferas com luzes pontuais na base
@@ -568,6 +661,55 @@ function onKeyDown(e) {
     moveX = 0.5;
   } else if (e.key === 'ArrowDown') {
     moveX = -0.5;
+  } else if (e.key.toLowerCase() === 'q') {
+    ufoBaseMesh.material = ufoBaseMaterials.lambert;
+    cockpitMesh.material = cockpitMaterials.lambert;
+    houseMesh.material = houseMaterials.lambert;
+    roofMeshes.forEach(roof => roof.material = roofMaterials.lambert);
+    triangleFront.material = triangleMaterials.lambert;
+    triangleBack.material = triangleMaterials.lambert;
+    doorMesh.material = doorMaterials.lambert;
+    windowMeshes.forEach(w => w.material = windowMaterials.lambert);
+    bandMesh.material = bandMaterials.lambert;
+    chamineMesh.material = chamineMaterials.lambert;
+    topoChamineMesh.material = topoChamineMaterials.lambert;
+    allTroncoMeshes.forEach(m => m.material = troncoMaterials.lambert);
+    allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.lambert);
+  } else if (e.key.toLowerCase() === 'w') {
+    ufoBaseMesh.material = ufoBaseMaterials.phong;
+    cockpitMesh.material = cockpitMaterials.phong;
+    houseMesh.material = houseMaterials.phong;
+    roofMeshes.forEach(roof => roof.material = roofMaterials.phong);
+    triangleFront.material = triangleMaterials.phong;
+    triangleBack.material = triangleMaterials.phong;
+    doorMesh.material = doorMaterials.phong;
+    windowMeshes.forEach(w => w.material = windowMaterials.phong);
+    bandMesh.material = bandMaterials.phong;
+    chamineMesh.material = chamineMaterials.phong;
+    topoChamineMesh.material = topoChamineMaterials.phong;
+    allTroncoMeshes.forEach(m => m.material = troncoMaterials.phong);
+    allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.phong);
+  } else if (e.key.toLowerCase() === 'e') {
+    ufoBaseMesh.material = ufoBaseMaterials.toon;
+    cockpitMesh.material = cockpitMaterials.toon;
+    houseMesh.material = houseMaterials.toon;
+    roofMeshes.forEach(roof => roof.material = roofMaterials.toon);
+    triangleFront.material = triangleMaterials.toon;
+    triangleBack.material = triangleMaterials.toon;
+    doorMesh.material = doorMaterials.toon;
+    windowMeshes.forEach(w => w.material = windowMaterials.toon);
+    bandMesh.material = bandMaterials.toon;
+    chamineMesh.material = chamineMaterials.toon;
+    topoChamineMesh.material = topoChamineMaterials.toon;
+    allTroncoMeshes.forEach(m => m.material = troncoMaterials.toon);
+    allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.toon);
+  } else if (e.key.toLowerCase() === 'r') {
+    const visible = scene.children
+      .filter(obj => obj.isLight)
+      .some(light => light.visible);
+    scene.traverse(obj => {
+      if (obj.isLight) obj.visible = !visible;
+    });
   }
 }
 
