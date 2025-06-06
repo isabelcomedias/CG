@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/controls/OrbitControls.js";
-//import { VRButton } from "three/addons/webxr/VRButton.js";
+import { VRButton } from "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/webxr/VRButton.js";
 //import * as Stats from "three/addons/libs/stats.module.js";
 //import { GUI } from "three/addons/libs/lil-gui.module.min.js";
-
+//import { VRButton } from "three/addons/webxr/VRButton.js";
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -21,12 +21,8 @@ let spotLightOn = true;
 let moveX = 0;
 let moveY = 0;
 
-let isCameraFixed = false;
-let cameraFixed;
-let normalCamera;
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
-
 /////////////////////
 /* CREATE SCENE(S) */
 /////////////////////
@@ -38,18 +34,12 @@ function createScene() {
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCamera() {
-  normalCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-  normalCamera.position.set(0, 40, 60);
-  normalCamera.lookAt(0, 0, 0); 
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, 40, 60);
+  camera.lookAt(0, 0, 0); 
 
-  camera = normalCamera; // default camera
 }
 
-function createFixedCamera() {
-  cameraFixed = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-  cameraFixed.position.set(60, 120, 120);
-  cameraFixed.lookAt(0, 0, 0); 
-}
 
 /////////////////////
 /* CREATE LIGHT(S) */
@@ -626,13 +616,13 @@ function render() {
 function init() {
   createScene();
   createCamera();
-  createFixedCamera();
   createLights();
   createMoon();
   createUFO();
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true;
   document.body.appendChild(renderer.domElement);
 
   controls = new OrbitControls(camera, renderer.domElement); 
@@ -649,6 +639,21 @@ function init() {
   window.addEventListener("resize", onResize);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
+  document.body.appendChild(VRButton.createButton(renderer));
+
+  renderer.xr.setReferenceSpaceType('local-floor'); // (0,0) is the floor level
+  renderer.xr.addEventListener('sessionstart', () => { // Triggers on VR start
+  const desiredLocation = new THREE.Vector3(10, 15, 20);
+  const offsetTransform = new XRRigidTransform({
+    x: -desiredLocation.x,
+    y: -desiredLocation.y,
+    z: -desiredLocation.z
+  }); // offsets the world so VR user does not spawn underground
+
+  const originalRefSpace = renderer.xr.getReferenceSpace();
+  const offsetRefSpace = originalRefSpace.getOffsetReferenceSpace(offsetTransform);
+  renderer.xr.setReferenceSpace(offsetRefSpace);
+ });
 }
 
 
@@ -657,7 +662,9 @@ function init() {
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
-  requestAnimationFrame(animate);
+  renderer.setAnimationLoop( function () {
+    renderer.render( scene, camera );
+  } );
   update();
   render();
 }
@@ -669,10 +676,14 @@ function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
-  if (isCameraFixed){
-    cameraFixed.aspect = window.innerWidth / window.innerHeight;
-    cameraFixed.updateProjectionMatrix();
-  }
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function resetCameraAfterVR(){
+
+  camera.fov = 75;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
@@ -766,15 +777,17 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.basic);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.basic);
   } else if (e.key === '7') {
-      if (isCameraFixed) {
-        camera = normalCamera;
-        isCameraFixed = false;
-      } else {
-        camera = cameraFixed
-        isCameraFixed = true;
+      camera.position.set(0, 40, 60);
+      camera.lookAt(0, 0, 0);
+      if (renderer.xr.isPresenting) {
+        const session = renderer.xr.getSession();
+        session.end();
+        resetCameraAfterVR(); // VR distorts the camera
       }
-    }
+    } 
 }
+
+
 
 ///////////////////////
 /* KEY UP CALLBACK */
