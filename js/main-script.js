@@ -4,9 +4,6 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.176.0/exampl
 //import * as Stats from "three/addons/libs/stats.module.js";
 //import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-// Adiciona o botão VR à página
-//document.body.appendChild(VRButton.createButton(renderer));
-
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -26,7 +23,7 @@ let moveY = 0;
 
 let isCameraFixed = false;
 let cameraFixed;
-let normalCamera
+let normalCamera;
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
 
