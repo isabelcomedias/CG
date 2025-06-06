@@ -4,6 +4,9 @@ import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.176.0/exampl
 //import * as Stats from "three/addons/libs/stats.module.js";
 //import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
+// Adiciona o botão VR à página
+//document.body.appendChild(VRButton.createButton(renderer));
+
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -21,6 +24,9 @@ let spotLightOn = true;
 let moveX = 0;
 let moveY = 0;
 
+let isCameraFixed = false;
+let cameraFixed;
+let normalCamera
 
 const HEIGHTMAP_URL = "https://i.postimg.cc/cJtxYwG0/37-916-7-416-13-505-505.png"
 
@@ -35,8 +41,17 @@ function createScene() {
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCamera() {
-  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-  camera.position.set(0, 40, 60);
+  normalCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+  normalCamera.position.set(0, 40, 60);
+  normalCamera.lookAt(0, 0, 0); 
+
+  camera = normalCamera; // default camera
+}
+
+function createFixedCamera() {
+  cameraFixed = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+  cameraFixed.position.set(60, 120, 120);
+  cameraFixed.lookAt(0, 0, 0); 
 }
 
 /////////////////////
@@ -162,8 +177,8 @@ function createSkyDome(skyTexture) {
   const sphere_geometry = new THREE.SphereGeometry(250, 32, 32);
 
   const material = new THREE.MeshStandardMaterial({
-  map: skyTexture,
-  side: THREE.BackSide,
+    map: skyTexture,
+    side: THREE.BackSide,
     });
   
   skyMesh = new THREE.Mesh(sphere_geometry, material);
@@ -195,13 +210,9 @@ function createMoon() {
   };
 
   const moon_geometry = new THREE.SphereGeometry(15, 40, 40);
-
   moonMesh = new THREE.Mesh(moon_geometry, window.moonMaterials.phong);
-
-  moonMesh = new THREE.Mesh(moon_geometry, window.moonMaterials.phong);
-
+  window.moonBaseMesh = moonMesh;
   moonMesh.position.set(100, 80, -170);
-
   scene.add(moonMesh);
 }
 
@@ -618,6 +629,7 @@ function render() {
 function init() {
   createScene();
   createCamera();
+  createFixedCamera();
   createLights();
   createMoon();
   createUFO();
@@ -659,6 +671,12 @@ function animate() {
 function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+
+  if (isCameraFixed){
+    cameraFixed.aspect = window.innerWidth / window.innerHeight;
+    cameraFixed.updateProjectionMatrix();
+  }
+
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
@@ -691,7 +709,7 @@ function onKeyDown(e) {
   } else if (e.key === 'ArrowDown') {
     moveX = -0.5;
   } else if (e.key.toLowerCase() === 'q') {
-    moonMesh.material = moonMaterials.lambert;
+    moonBaseMesh.material = moonMaterials.lambert;
     ufoBaseMesh.material = ufoBaseMaterials.lambert;
     cockpitMesh.material = cockpitMaterials.lambert;
     houseMesh.material = houseMaterials.lambert;
@@ -706,7 +724,7 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.lambert);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.lambert);
   } else if (e.key.toLowerCase() === 'w') {
-    moonMesh.material = moonMaterials.pong;
+    moonBaseMesh.material = moonMaterials.phong;
     ufoBaseMesh.material = ufoBaseMaterials.phong;
     cockpitMesh.material = cockpitMaterials.phong;
     houseMesh.material = houseMaterials.phong;
@@ -721,7 +739,7 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.phong);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.phong);
   } else if (e.key.toLowerCase() === 'e') {
-    moonMesh.material = moonMaterials.toon;
+    moonBaseMesh.material = moonMaterials.toon;
     ufoBaseMesh.material = ufoBaseMaterials.toon;
     cockpitMesh.material = cockpitMaterials.toon;
     houseMesh.material = houseMaterials.toon;
@@ -736,7 +754,7 @@ function onKeyDown(e) {
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.toon);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.toon);
   } else if (e.key.toLowerCase() === 'r') {
-    moonMesh.material = moonMaterials.basic;
+    moonBaseMesh.material = moonMaterials.basic;
     ufoBaseMesh.material = ufoBaseMaterials.basic;
     cockpitMesh.material = cockpitMaterials.basic;
     houseMesh.material = houseMaterials.toon;
@@ -750,7 +768,15 @@ function onKeyDown(e) {
     topoChamineMesh.material = topoChamineMaterials.basic;
     allTroncoMeshes.forEach(m => m.material = troncoMaterials.basic);
     allCopaMeshes.forEach(copa => copa.material = copa.userData.materials.basic);
-  }
+  } else if (e.key === '7') {
+      if (isCameraFixed) {
+        camera = normalCamera;
+        isCameraFixed = false;
+      } else {
+        camera = cameraFixed
+        isCameraFixed = true;
+      }
+    }
 }
 
 ///////////////////////
